@@ -55,8 +55,31 @@ info_version_matches_the_application_test() ->
     #{version := Reported} = ?SERVICE:info(),
     ?assertEqual(list_to_binary(Vsn), Reported).
 
-health_is_green_test() ->
-    ?assertEqual(ok, ?SERVICE:health()).
+%% Health is the MATCH's health. A bot that cannot find an opponent for a long
+%% time is the mesh failing to carry two bots to each other, and says so; a
+%% bot whose coordinator is gone is down.
+no_coordinator_is_down_test() ->
+    undefined = whereis(find_match),
+    ?assertEqual({down, match_finder_unavailable}, ?SERVICE:health()).
+
+playing_is_healthy_test() ->
+    [?assertEqual(ok, ?SERVICE:health_of(#{role => R, unpaired_ms => 0}))
+     || R <- [playing_host, playing_remote]].
+
+briefly_unpaired_is_healthy_test() ->
+    ?assertEqual(ok, ?SERVICE:health_of(#{role => seeking, unpaired_ms => 60000})).
+
+long_unpaired_is_degraded_test() ->
+    ?assertEqual({degraded, {unpaired_ms, 900001}},
+                 ?SERVICE:health_of(#{role => hosting, unpaired_ms => 900001})).
+
+a_live_coordinator_answers_health_test() ->
+    {ok, Pid} = find_match:start_link(#{name => find_match,
+                                        node_id => fun() -> {error, not_yet} end,
+                                        stations => fun() -> [] end}),
+    try ?assertEqual(ok, ?SERVICE:health())
+    after unlink(Pid), gen_server:stop(Pid)
+    end.
 
 %% An empty list is the correct answer for a service that does nothing yet. The
 %% assertion is here so that adding a capability breaks a test and makes someone
@@ -81,15 +104,58 @@ authority_matches_what_is_announced_test() ->
     ?assertEqual([], Actions),
     ?assertEqual([], Resources).
 
-%% The supervisor starts and stops cleanly on its own, without mcl_om. It has
-%% no children as generated; this asserts the tree is startable, not that it does
-%% any work.
+%% The supervisor starts and stops cleanly on its own, without mcl_om: the
+%% engine supervisor first, then the coordinator that starts engines under it.
+%% With no mesh the coordinator waits to learn its node id and plays nothing.
 supervisor_starts_and_stops_test() ->
     {ok, Pid} = mcl_mpong_sup:start_link(),
     ?assert(is_process_alive(Pid)),
-    ?assertEqual([], supervisor:which_children(Pid)),
+    ?assertEqual([host_match_sup, find_match],
+                 lists:reverse([Id || {Id, _, _, _} <- supervisor:which_children(Pid)])),
     unlink(Pid),
-    exit(Pid, shutdown).
+    exit(Pid, shutdown),
+    wait_gone(Pid).
+
+wait_gone(Pid) ->
+    Ref = erlang:monitor(process, Pid),
+    receive {'DOWN', Ref, process, Pid, _} -> ok after 2000 -> error(sup_did_not_stop) end.
+
+%%==============================================================================
+%% The match topics
+%%==============================================================================
+
+%% One subscription per match fact, each to the coordinator's handler, on the
+%% topic the contract names in the configured realm.
+subscribes_to_every_match_fact_test() ->
+    with_realm_name("io.macula", fun() ->
+        ?assertEqual([{mcl_mpong_facts:topic(<<"io.macula">>, F), hear_match_facts, F}
+                      || F <- mcl_mpong_facts:facts()],
+                     ?SERVICE:subscriptions())
+    end).
+
+%% A topic naming no realm reaches nobody. Refuse rather than guess.
+an_unset_realm_name_is_refused_test() ->
+    with_realm_name("", fun() ->
+        ?assertError({mcl_mpong_realm_name_unset, realm_name}, ?SERVICE:realm_name())
+    end).
+
+%% ⚠ THE REALM NAME IS IN THE SHIPPED CONFIG OR THE TOPICS HAVE NONE. Read the
+%% config template itself, because a missing line is invisible to the code.
+the_realm_name_is_configured_test() ->
+    {ok, Config} = file:read_file(alongside("config/sys.config.src")),
+    ?assertNotEqual(nomatch, binary:match(Config, <<"{realm_name, \"${MCL_REALM_NAME}\"}">>)),
+    {ok, Compose} = file:read_file(alongside("deploy/docker-compose.yml")),
+    ?assertNotEqual(nomatch, binary:match(Compose, <<"MCL_REALM_NAME=">>)).
+
+with_realm_name(Name, Fun) ->
+    Old = application:get_env(mcl_mpong, realm_name),
+    application:set_env(mcl_mpong, realm_name, Name),
+    try Fun()
+    after restore(Old)
+    end.
+
+restore({ok, V}) -> application:set_env(mcl_mpong, realm_name, V);
+restore(undefined) -> application:unset_env(mcl_mpong, realm_name).
 
 %%==============================================================================
 %% The runtime is pinned in two places, and neither is the one you are running

@@ -1,87 +1,165 @@
 # mcl-mpong
 
-**Two bots play pong over the mesh, and the match reports how the mesh carried it**
+**Two bots play pong over the mesh, and the match reports how the mesh carried it.**
 
-## Status: scaffold
+This exists so anyone watching a pong match between two bots is also watching
+the mesh: how long a paddle move takes to come back, how many frames go missing,
+and which stations each end is on.
 
-The service boots, joins the mesh and answers `/health` on 8472. It
-does nothing else yet.
+## Status
 
-It announces no capability and asks the realm for no authority, because it can do
-nothing yet. Both lists grow when the thing they name exists. Advertising a
-capability before it exists puts a lie on the mesh where another service can find
-it and call it.
+Built, tested locally, **not yet deployed**. Runs on macula 12 through `mcl_om`.
+The spectator, macula-portal's `mpong_subscriber`, still reads the old topics
+and gets repointed at the contract below. This replaces
+`hecate-services/hecate-mpong-bot`, which ran on macula 10 and inherits nothing:
+no identity, no topic, no store.
 
-## Running it
+**No event store, by decision.** A match is throwaway state held in the engine
+process. This is a scoped waiver of the house rule that business processes are
+event sourced, for this demo only (Raf, 2026-09-23).
 
-    rebar3 compile
-    rebar3 eunit
-    rebar3 lint
+## What it does
 
-    scripts/health.sh                      # against a running node
+- **Finds an opponent.** Each bot listens for open games for a jittered few
+  seconds. If it hears one it asks for the seat; if not it hosts its own and
+  advertises it. The jitter makes each bot a host or a challenger, never both.
+  A host nobody joins gives up and seeks again, so two bots that both started
+  hosting still pair.
+- **Plays.** The host runs the authoritative game (25 Hz, a game to 11, win by
+  2, best of 3) and publishes a frame 5 times a second. The challenger steers
+  its paddle toward the ball in the host's frames and publishes its moves.
+- **Measures.** Every move and every frame carries what its sender has observed
+  of the other end through the mesh (below).
+- **Refuses a third player** with `seat_denied`, so a refusal is a fact on the
+  mesh rather than a silence.
+- **Pauses** when the challenger's paddle goes silent for 3 s, and ends the game
+  if it stays silent for 10 s more.
 
-Building the image needs a Rust toolchain, because macula ships a QUIC NIF and
-the alpine build compiles it from source rather than fetching one linked against
-a different libc.
+Every fact is attributed by the **publisher macula verified**, never by the
+payload: a seat goes to whoever asked for it, a move counts only from the bot
+holding the seat, a frame only from the host of the game. The mesh hands a bot
+its own facts back, and those are ignored.
 
-    podman build -t mcl-mpong -f Containerfile .
+## The fact contract
+
+Six topics, org `mcl-mpong`, app `mpong`, domain `match`, version 2, for example
+`io.macula/mcl-mpong/mpong/match/state_broadcast_v2`. The `game_id` is in the
+payload, never in a topic. Values are binaries, integers, lists and maps; flags
+are 1/0; node ids are lowercase hex. `apps/mcl_mpong/test/mcl_mpong_facts_tests.erl`
+pins every topic and every key, and a change that breaks it gets a new `_vN`.
+
+| Fact | From | Carries |
+|---|---|---|
+| `game_advertised_v2` | host | `game_id`, `status` (`open`, `playing`, `ended`, `withdrawn`), `host_node_id`, `max_players`, `at_ms` |
+| `seat_requested_v2` | challenger | `game_id`, `wall_index`, `at_ms` |
+| `seat_reserved_v2` | host | `game_id`, `challenger_node_id`, `wall_index`, `at_ms` |
+| `seat_denied_v2` | host | `game_id`, `challenger_node_id`, `reason`, `at_ms` |
+| `paddle_moved_v2` | challenger | `game_id`, `wall_index`, `y`, `tick`, `move_seq`, and the challenger's measurements |
+| `state_broadcast_v2` | host | the game (`ball`, `paddles`, `alive`, `points`, `games_won`, `serving`, `obstacles`, `paused`, `tick`, `arena`) and a `mesh` block |
+
+### What the match measures
+
+The `mesh` block in every `state_broadcast_v2`:
+
+| Key | Meaning |
+|---|---|
+| `frame_seq`, `frames_sent` | the host numbers its frames from 1 |
+| `host_stations` | node ids of the stations the host's pool is connected to |
+| `moves_seen`, `moves_missed` | the challenger's moves the host received, and the gaps in `move_seq` |
+| `moves_delivered_via` | how the last move arrived: `direct`, `plumtree`, or `none` yet |
+| `echo_move_seq`, `echo_held_ms` | the latest move the host applied, and how long it held it before this frame |
+| `challenger` | the challenger's own report, from its latest move |
+
+The challenger's report, in every `paddle_moved_v2` and echoed in `mesh.challenger`:
+
+| Key | Meaning |
+|---|---|
+| `frames_seen`, `frames_missed` | the host's frames it received, and the gaps in `frame_seq` since it joined |
+| `rtt_ms_last`, `rtt_ms_p50`, `rtt_samples` | round trip of its moves, over the last 32 |
+| `stations` | node ids of the stations the challenger's pool is connected to |
+| `frames_delivered_via` | how the last frame arrived |
+
+**The round trip needs no synchronised clocks.** The challenger times a move
+from sending it to seeing it echoed, and subtracts `echo_held_ms`, the time the
+host held it. Each side reads only its own monotonic clock. Before any sample
+exists the counts are 0, and `rtt_samples` says so.
+
+Two ends, two station sets, two delivery channels: `host_stations` →
+`challenger.stations` is the path a spectator can draw.
 
 ## Configuration
 
 | Variable | Default | Meaning |
-|----------|---------|---------|
-| `MCL_REALM` | required | 64-hex realm tag, the `sha256` of the realm's name. No default: a service that guesses its realm announces itself where nobody can attribute it. |
-| `MCL_REALM_KEY` | required | The realm's public signing key, hex encoded: the **trust anchor**, not an identifier. Every org-namespaced advertisement is verified against it, so without it nothing resolves, the boot claim never reaches the realm, and the service stays green while unreachable. Public material, not a secret. |
-| `MACULA_STATION_SEEDS` | required | Station hosts to dial, `host[:port]`, comma-separated. No default: naming a realm costs nothing, dialling a production station from every dev clone does. |
-| `MACULA_STATION_NODE_IDS` | required | The matching 64-hex station node ids, comma-separated, index-paired with the seeds. The 11.x dial is pinned (D5): mcl_om refuses to boot a pool with an unpinned seed. |
-| `MCL_HEALTH_PORT` | `8472` | Health endpoint. Host networking makes a collision a silent bind failure, so check the host before changing.  |
-| `MCL_NODE_NAME` | `mcl_mpong` | Erlang node name. |
-| `MCL_NODE_HOST` | `127.0.0.1` | Erlang node host. |
-| `MCL_COOKIE` | `mcl_mpong` | Erlang cookie. |
+|---|---|---|
+| `MCL_REALM` | required | 64-hex realm tag, sha256 of the realm name |
+| `MCL_REALM_NAME` | required | the realm name the topics carry, e.g. `io.macula`. The service **refuses to start** unless its sha256 is `MCL_REALM` |
+| `MCL_REALM_KEY` | required | the realm's public signing key, hex. The trust anchor, public material |
+| `MACULA_STATION_SEEDS` | required | station hosts, `host[:port]`, comma-separated |
+| `MACULA_STATION_NODE_IDS` | required | the matching 64-hex station node ids, index-paired |
+| `MCL_HEALTH_PORT` | `8472` | health endpoint; host networking makes a clash a silent bind failure |
+| `MCL_NODE_NAME` | `mcl_mpong` | Erlang node name |
+| `MCL_NODE_HOST` | `127.0.0.1` | Erlang node host |
+| `MCL_COOKIE` | `mcl_mpong` | Erlang cookie |
 
-`deploy/docker-compose.yml` runs it, and carries what the service knows about
-itself. If you deploy through something else, let that carry **placement**: which
-host, which station, which realm, which secret store. Keeping the two apart is
-what stops a config table in a README and the real environment drifting.
+A match needs **two** running bots. One alone hosts, gives up, seeks, and hosts
+again, and reports itself degraded after 15 minutes of that.
+
+`deploy/docker-compose.yml` runs one bot. It mounts a named volume at
+`/etc/mcl/secrets` for the node identity key, which is the bot's verified
+identity on the mesh; without it every recreate mints a new one. The volume is
+named `mcl-mpong-secrets` in the file, not derived from the project name, so a
+second bot on the same host needs its own copy with a different volume name,
+container name and health port, or the two share one identity.
+
+### Node id
+
+Once its pool is up, a bot logs `[mpong] node id: <64 hex>`. That is the id the
+other bot and the spectator see as this bot's verified publisher. It is stable
+as long as the identity volume is.
+
+## Health
+
+`/health` reports the **match**, because a bot with nobody to play is the mesh
+failing at the one thing this service shows:
+
+- `down` when the coordinator is not answering;
+- `degraded` when the bot has had no opponent for more than 15 minutes;
+- `ok` otherwise, including while seeking.
+
+`scripts/health.sh [host]` asks a running node.
+
+## Build and test
+
+    scripts/check.sh        # compile, eunit, lint, as CI runs them
+
+OTP 28, pinned in `.tool-versions`, the `Containerfile` and CI, and a test fails
+when they disagree with the VM running it. `check.sh` puts OTP 28.4.2 first on
+the path. The image build compiles macula's NIFs from source, so it needs a Rust
+toolchain:
+
+    podman build -t mcl-mpong -f Containerfile .
+
+The suite pairs two bots without a mesh: two coordinators find each other and
+trade frames and moves, round trips included, through an in-test bus that sends
+every fact through macula's own CBOR codec and back to every bot, the sender
+included. It does not play a match to its end.
 
 ## Deployment
 
-CI builds on every push to `main` and pushes
-`ghcr.io/macula-services/mcl-mpong:latest` plus the semver tag. Pull `:latest` under
-watchtower and a merge is a deploy, while a rollback is pinning to a semver tag.
+CI pushes `ghcr.io/macula-services/mcl-mpong:latest` on every push to `main`
+that touches code, and the semver tag on a `v*` tag. Under watchtower a push to
+`main` is a deploy; a rollback pins a semver tag.
 
-Two things CI cannot do for you, both of which have bitten:
-
-1. The registry package may be created **private**, and the pull then fails on
-   the host with a bare `unauthorized` that names nothing. Check it after the
-   first build. On ghcr the `org.opencontainers.image.source` label in the
-   Containerfile is what links the package to the repository.
-2. The host needs `MCL_REALM` and the pinned station pair supplied from
-   somewhere they are not committed.
+The registry package may be created **private**, and a pull then fails with a
+bare `unauthorized`. Check it after the first build.
 
 ## The service contract
 
-Six callbacks in `mcl_mpong_service`, all required, all resolved **by name** by
-`mcl_om` at startup on a live node. The `-behaviour(mcl_om_service)`
-attribute turns a missing one into a compile error rather than an `undef` where
-nobody is watching, and the eunit suite guards the attribute itself.
+`mcl_mpong_service` implements the six `mcl_om_service` callbacks, all resolved
+**by name** at startup, plus `subscriptions/0`, which gives mcl_om one
+subscriber per match fact. It announces no capability and asks the realm for no
+authority: the bot's whole output is its published facts.
 
-### Adding a store later
-
-This service has no `reckon-db` store, which is the right answer for most. The
-reckon-db applications run either way; what a store adds is a data directory, an
-open handle, and something written.
-
-The cheapest way to get one is to scaffold again with `store=1`, which generates
-the callbacks, the config and the guards together.
-
-⚠ **By hand it is three things and not one, and the missing third crash-loops the
-node.** Export `store_id/0` and `data_dir/0`; add the `evoq` adapter block to
-`config/sys.config.src`, without which boot raises
-`{not_configured, event_store_adapter}` before any service code runs; and mount a
-volume in the compose file. A sibling service put two of three fleet nodes into a
-boot loop by doing the first and not the second.
-
-## Licence
+## License
 
 Apache-2.0.

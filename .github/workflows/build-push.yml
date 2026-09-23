@@ -15,6 +15,12 @@ on:
   push:
     branches: [main]
     tags:     ['v*']
+    # A push to main rolls every box watching :latest. One that changes no
+    # code must not: a docs-only commit once reset a whole fleet.
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+      - 'scripts/**'
   workflow_dispatch:
 
 # ONE IMAGE BUILD IN FLIGHT PER REF. Every push to main builds and pushes

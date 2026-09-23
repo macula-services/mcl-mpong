@@ -40,6 +40,9 @@ services:
       # No default. A service that guesses its realm announces itself where
       # nobody can attribute it, and that looks exactly like a healthy node.
       - MCL_REALM=${MCL_REALM:?set MCL_REALM to the 64-hex realm tag}
+      # The realm NAME the match topics carry; the service refuses to start
+      # unless its sha256 is MCL_REALM above.
+      - MCL_REALM_NAME=${MCL_REALM_NAME:?set MCL_REALM_NAME to the realm name, e.g. io.macula}
       # The TRUST ANCHOR, and a different thing from MCL_REALM above: that is
       # an identifier, this is the realm's public signing key, hex encoded.
       # Without it nothing org-namespaced resolves, the boot claim never
