@@ -1,0 +1,63 @@
+# Build the OCI image for mcl-mpong and push to the registry.
+#
+# Pushes BOTH :latest and the semver tag. The deployed compose tracks :latest
+# under watchtower for zero-touch deploys, and the semver tags stay published so a
+# bad release can be pinned back to a known one.
+#
+# NOTE ON PUSHING THIS FILE. An HTTPS push that creates or updates anything under
+# .github/workflows/ needs a token carrying the `workflow' scope, and the error
+# names the FILE rather than the missing scope. Use an SSH remote and the problem
+# does not arise.
+
+name: build-and-push
+
+on:
+  push:
+    branches: [main]
+    tags:     ['v*']
+  workflow_dispatch:
+
+# ONE IMAGE BUILD IN FLIGHT PER REF. Every push to main builds and pushes
+# :latest; without this, three quick commits run three builds that finish in
+# whatever order the runners please, and :latest ends up being whichever
+# finished LAST, not whichever was pushed last -- watchtower then rolls the
+# fleet onto an older commit and flaps. hecate-rag hit exactly that live.
+concurrency:
+  group: build-and-push-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Log in to the registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set tag
+        id: tag
+        run: |
+          if [[ "${GITHUB_REF}" == refs/tags/v* ]]; then
+            echo "tag=${GITHUB_REF#refs/tags/v}" >> "$GITHUB_OUTPUT"
+          else
+            echo "tag=latest" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Containerfile
+          push: true
+          tags: |
+            ghcr.io/macula-services/mcl-mpong:latest
+            ghcr.io/macula-services/mcl-mpong:${{ steps.tag.outputs.tag }}
