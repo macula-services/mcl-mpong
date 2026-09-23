@@ -11,7 +11,7 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 WANT="${1:?usage: $0 <mcl_om version>}"
-export PATH="$HOME/.local/share/mise/installs/erlang/28.4.2/bin:$PATH"
+export PATH="$HOME/.local/share/mise/installs/erlang/28.4.3/bin:$PATH"
 rm -rf rebar.lock _checkouts _build/default/lib/mcl_om _build/test/lib/mcl_om _build/prod/lib/mcl_om
 rebar3 get-deps >/dev/null
 rebar3 compile >/dev/null

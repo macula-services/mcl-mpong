@@ -7,38 +7,24 @@
 # together with the code that writes it, and declare it here and in the compose
 # file at the same time.
 
-# ⚠ THE RUNTIME IS PINNED IN TWO PLACES AND THEY MUST AGREE: here and `lint.yml'
-# beside it. A generated service that builds on one release and tests on another
-# only ever proves "the tests pass on the CI release".
+# ⚠ THE BUILD IMAGE IS PINNED IN TWO PLACES AND THEY MUST BE THE SAME: here and
+# `lint.yml' beside it, the team's macula-ci-otp by digest (OTP 28.4.3, rebar3
+# and Rust pinned exactly). A test (mcl_mpong_service_tests) fails when the two
+# differ, or when the release running the suite is not the one `.tool-versions'
+# names. The runtime below is the matching macula-pq-runtime pair, by digest:
+# Debian trixie with OpenSSL 3.5+, which macula 12's ML-DSA needs at run time.
 #
-# This template said 27 from the beginning and nothing revisited it, so every
-# service scaffolded from it inherited 27 while development machines moved on.
-# In `hecate-biotope' that cost three commits of red CI on a crash that does not
-# occur on the development release at all, and because `build-push.yml' is a
-# separate workflow the image shipped to the fleet regardless.
-FROM docker.io/erlang:28-alpine AS builder
+# It was `erlang:28-alpine', a floating major with a floating Rust and rebar3
+# from S3's unversioned latest: any rebuild could change the compiler.
+ARG CI_OTP=ghcr.io/macula-io/macula-ci-otp:20260923-1347@sha256:b2260d084a3d3c5e0b74932c4ee052a0cadfddddb6587d5d2214873e6bb06330
+ARG PQ_RUNTIME=ghcr.io/macula-io/macula-pq-runtime:20260923-1347@sha256:255b503cf87c26510fd12e8fcb92be6bd0dc56b5ff6d9145477b636b5c11d261
+
+FROM ${CI_OTP} AS builder
 WORKDIR /build
 
-# macula ships a QUIC NIF. MACULA_FORCE_SOURCE_BUILD makes it build here rather
-# than fetch a prebuilt binary linked against a different libc, which is the
-# recorded glibc trap: the fetched artifact loads on the build host and fails on
-# alpine at runtime.
-#
-# openssl-dev/zstd-dev/snappy-dev/lz4-dev: mcl_om pulls in rocksdb (via
-# barrel_docdb) and khepri/ra transitively, UNCONDITIONALLY -- confirmed on a
-# storeless, producer-only service (no store_id/0 or data_dir/0 exported),
-# which still failed to build without these. Not specific to a service that
-# owns its own reckon-db store.
-RUN apk add --no-cache git curl bash build-base cmake perl linux-headers \
-        openssl-dev zstd-dev snappy-dev lz4-dev
-RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs \
-        | sh -s -- -y --default-toolchain stable --profile minimal
-ENV PATH="/root/.cargo/bin:${PATH}"
-ENV RUSTFLAGS="-C target-feature=-crt-static"
+# macula's NIFs build from source with the image's pinned Rust rather than
+# fetching a prebuilt binary: the build is then fully determined by this file.
 ENV MACULA_FORCE_SOURCE_BUILD=1
-
-RUN curl -fsSL https://s3.amazonaws.com/rebar3/rebar3 -o /usr/local/bin/rebar3 \
-    && chmod +x /usr/local/bin/rebar3
 
 # Dependencies resolve from rebar.config alone, so this layer survives every
 # change to config/ and apps/ and the Rust toolchain is not re-run per commit.
@@ -49,22 +35,20 @@ COPY config ./config
 COPY apps ./apps
 RUN rebar3 as prod release
 
-FROM docker.io/alpine:3.22
+FROM ${PQ_RUNTIME}
 # LINKS THE PACKAGE TO THE REPOSITORY. On registries that read it, ghcr among
 # them, a package without this label is an orphan: it does not appear on the
 # repository page and does not inherit its visibility. A service that shipped
 # private by accident failed its first pull with a bare "unauthorized", which
 # names nothing and sends you looking in the wrong place.
 LABEL org.opencontainers.image.source="https://github.com/macula-services/mcl-mpong"
-# zstd-libs/snappy/lz4-libs: the RUNTIME shared libraries for rocksdb's
-# compression backends, compiled against in the builder stage above via
-# their -dev packages. Missing here crashes the release outright on
-# boot -- rocksdb's on_load NIF init fails with "Failed to load NIF
-# library: Error loading shared library liblz4.so.1: No such file or
-# directory" and the whole node exits, since kernel can't start.
-# Confirmed live: this stage shipped without them once already.
-RUN apk add --no-cache ncurses-libs libstdc++ libgcc openssl ca-certificates curl \
-        zstd-libs snappy lz4-libs
+# The commit this image was built from, set by build-push.yml. "unknown" on a
+# local build, which is then visibly not a CI image.
+ARG REVISION=unknown
+LABEL org.opencontainers.image.revision="${REVISION}"
+# Nothing to install: macula-pq-runtime carries libstdc++, ncurses, OpenSSL 3.5+,
+# ca-certificates and curl (the health check below). mcl_om >= 0.27 holds no
+# rocksdb, so no compression libraries either.
 WORKDIR /app
 COPY --from=builder /build/_build/prod/rel/mcl_mpong ./
 

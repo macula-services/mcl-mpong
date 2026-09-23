@@ -175,15 +175,30 @@ restore(undefined) -> application:unset_env(mcl_mpong, realm_name).
 %%
 %% ⚠⚠ IT FAILS RATHER THAN WARNS WHEN YOUR VM DIFFERS, AND THAT IS DELIBERATE.
 %% Developing on a release you do not ship makes a green suite mean less than it
-%% appears to. If you want to work on another release, move both pins and find
+%% appears to. If you want to work on another release, move the pins and find
 %% out what breaks, which is the whole point of having them.
-the_runtime_agrees_between_the_image_the_ci_and_this_vm_test() ->
-    Image = pinned("Containerfile", "FROM docker.io/erlang:([0-9]+)"),
-    Ci = pinned(".github/workflows/lint.yml", "image: erlang:([0-9]+)"),
-    Running = list_to_binary(erlang:system_info(otp_release)),
-    %% Sorted and deduplicated, so a failure prints all three rather than the
-    %% first pair that happened to be compared.
-    ?assertEqual([Image], lists:usort([Image, Ci, Running])).
+%%
+%% The pins are EXACT now, not a major: the image builds in the team's
+%% macula-ci-otp by digest, and CI lints in that same digest. So the two files
+%% must name the identical image reference, and the release running this suite
+%% must be the full OTP version `.tool-versions' names (28.4.3, the team
+%% standard). A major alone let 28.4.2 and 28.4.3 pass as the same thing.
+the_image_and_the_ci_build_in_the_same_pinned_image_test() ->
+    Image = pinned("Containerfile", "ARG CI_OTP=(\\S+)"),
+    Ci = pinned(".github/workflows/lint.yml", "image: (ghcr\\.io/\\S+)"),
+    ?assertMatch({match, _}, re:run(Image, "@sha256:[0-9a-f]{64}$")),
+    ?assertEqual(Image, Ci).
+
+the_runtime_is_the_release_tool_versions_names_test() ->
+    Pinned = pinned(".tool-versions", "erlang ([0-9.]+)"),
+    ?assertEqual(Pinned, running_otp_version()).
+
+%% The full version (28.4.3), not otp_release (28).
+running_otp_version() ->
+    File = filename:join([code:root_dir(), "releases",
+                          erlang:system_info(otp_release), "OTP_VERSION"]),
+    {ok, Text} = file:read_file(File),
+    string:trim(Text).
 
 pinned(Relative, Pattern) ->
     {ok, Text} = file:read_file(alongside(Relative)),

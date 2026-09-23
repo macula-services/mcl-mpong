@@ -7,6 +7,22 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+### Changed
+
+- **mcl_om `~> 0.27`.** 0.27.0 drops barrel_docdb and with it the rocksdb C++
+  build this service paid for without holding any read model, and its boot
+  claims carry the `MCL_BOX` and service-name labels, so the realm's Providers
+  desk shows which box each bot runs on. Resolved from hex as 0.27.0.
+- **The image builds in the team's `macula-ci-otp` and runs on
+  `macula-pq-runtime`, both by digest** (OTP 28.4.3, Rust and rebar3 pinned),
+  instead of the floating `erlang:28-alpine`, a floating Rust and rebar3 from
+  S3's unversioned latest. CI lints and tests in the same `macula-ci-otp`
+  digest. The pin test now fails when the Containerfile and `lint.yml` name
+  different images, or when the VM running the suite is not the release
+  `.tool-versions` names (28.4.3; it was 28.4.2).
+- The image carries `org.opencontainers.image.revision`, the commit it was
+  built from.
+
 ### Added
 
 - The port of `hecate-services/hecate-mpong-bot` onto `mcl_om` and macula 12:

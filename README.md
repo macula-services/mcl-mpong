@@ -8,7 +8,7 @@ and which stations each end is on.
 
 ## Status
 
-Built, tested locally, **not yet deployed**. Runs on macula 12 through `mcl_om`.
+Built and tested. Its fleet definition (two bots, pinned by digest) is in `macula-fleet`; see Deployment. Runs on macula 12 through `mcl_om`.
 The spectator, macula-portal's `mpong_subscriber`, still reads the old topics
 and gets repointed at the contract below. This replaces
 `hecate-services/hecate-mpong-bot`, which ran on macula 10 and inherits nothing:
@@ -132,12 +132,19 @@ failing at the one thing this service shows:
 
     scripts/check.sh        # compile, eunit, lint, as CI runs them
 
-OTP 28, pinned in `.tool-versions`, the `Containerfile` and CI, and a test fails
-when they disagree with the VM running it. `check.sh` puts OTP 28.4.2 first on
-the path. The image build compiles macula's NIFs from source, so it needs a Rust
-toolchain:
+OTP **28.4.3**, the team standard. The image builds in the team's
+`macula-ci-otp` by digest and runs on the matching `macula-pq-runtime` by digest
+(`Containerfile`), and CI lints and tests in that same `macula-ci-otp` digest
+(`lint.yml`). A test fails when the two files name different images, or when the
+VM running the suite is not the release `.tool-versions` names. `check.sh` puts
+OTP 28.4.3 first on the path. The same gate, in the CI image, as root:
 
-    podman build -t mcl-mpong -f Containerfile .
+    podman run --rm --cpus=4 --memory=8g -v "$PWD:/src:Z" -w /src \
+      "$(sed -n 's/^ARG CI_OTP=//p' Containerfile)" \
+      bash -c 'rebar3 compile && rebar3 eunit && rebar3 lint'
+
+The image carries the commit it was built from as
+`org.opencontainers.image.revision`.
 
 The suite pairs two bots without a mesh: two coordinators find each other and
 trade frames and moves, round trips included, through an in-test bus that sends
@@ -147,11 +154,13 @@ included. It does not play a match to its end.
 ## Deployment
 
 CI pushes `ghcr.io/macula-services/mcl-mpong:latest` on every push to `main`
-that touches code, and the semver tag on a `v*` tag. Under watchtower a push to
-`main` is a deploy; a rollback pins a semver tag.
+that touches code, and the semver tag on a `v*` tag. A push deploys nothing:
+the fleet runs the image **pinned by digest** in `macula-io/macula-fleet`
+(`edge/scripts/docker-compose.mcl-mpong.yml`), two bots, beam01 dialling
+nuremberg and beam02 helsinki, so every match crosses stations. A new build
+reaches them only when that pin moves.
 
-The registry package may be created **private**, and a pull then fails with a
-bare `unauthorized`. Check it after the first build.
+The package is public.
 
 ## The service contract
 
