@@ -34,3 +34,6 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   boolean; `alive` and `paused` are 1/0.
 - The image build ignores pushes that touch only docs or scripts, so they do
   not roll the fleet.
+- Built on `mcl_om ~> 0.26.2`, the floor that refuses to run on an identity key
+  it could not save. `scripts/is-mcl-om-resolved-from-hex.sh` asserts the
+  version a clean resolve from hex actually builds.
