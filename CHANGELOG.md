@@ -9,6 +9,11 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Fixed
 
+- **A bot that plays says so.** Every role change an operator cares about is one
+  info line: seeking, hosting, seat requested, paired (as host or seated), match
+  ended, no opponent / no answer. The first two bots on the fleet paired and played
+  while logging nothing past their node id, which sent a diagnosis looking for a
+  delivery fault that was not there (2026-09-24).
 - **The bot claims its org.** `config/sys.config.src` never set mcl_om's `org`,
   so mcl_om read `_`, sent the realm no claim and advertised nothing while
   `/health` said `ok` (the first bot on beam01, 2026-09-24). It is fixed in the
@@ -17,6 +22,11 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Changed
 
+- **mcl_om `~> 0.28`** (resolved from hex as 0.28.0, with macula 12.2.0). Every
+  service now advertises `mcl-mpong/info`, which is what makes a bot count as
+  online on the realm's Providers desk (it advertised nothing, so it showed
+  offline while playing). 0.28 is also required with macula 12.2: under 0.27.x a
+  failed publish announcement could kill the publishing process.
 - **mcl_om `~> 0.27`.** 0.27.0 drops barrel_docdb and with it the rocksdb C++
   build this service paid for without holding any read model, and its boot
   claims carry the `MCL_BOX` and service-name labels, so the realm's Providers

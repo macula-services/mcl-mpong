@@ -19,6 +19,45 @@
 %% Choosing a role
 %%------------------------------------------------------------------------------
 
+%% ⚠ A BOT THAT PLAYS MUST SAY SO IN ITS LOG. The first two bots on the fleet paired
+%% and played while logging nothing after their node id, and "dead logs" sent the
+%% diagnosis looking for a delivery fault that was not there (2026-09-24). Every
+%% role change that matters to an operator is one info line.
+line(From, To, Game, Peer) ->
+    lists:flatten(io_lib:format("~ts", [find_match:lifecycle(From, To, Game, Peer)])).
+
+hosting_is_logged_test() ->
+    ?assertEqual("[mpong] hosting game g1, waiting for a challenger",
+                 line(seeking, hosting, <<"g1">>, undefined)).
+
+a_seat_request_is_logged_test() ->
+    ?assertEqual("[mpong] seat requested in game g1 hosted by h1",
+                 line(seeking, challenging, <<"g1">>, <<"h1">>)).
+
+pairing_as_host_is_logged_test() ->
+    ?assertEqual("[mpong] paired: hosting game g1 against c1",
+                 line(hosting, playing_host, <<"g1">>, <<"c1">>)).
+
+pairing_as_challenger_is_logged_test() ->
+    ?assertEqual("[mpong] paired: seated in game g1 hosted by h1",
+                 line(challenging, playing_remote, <<"g1">>, <<"h1">>)).
+
+a_match_ending_is_logged_test() ->
+    ?assertEqual("[mpong] match ended: game g1 against c1, seeking again",
+                 line(playing_host, seeking, <<"g1">>, <<"c1">>)),
+    ?assertEqual("[mpong] match ended: game g1 against h1, seeking again",
+                 line(playing_remote, seeking, <<"g1">>, <<"h1">>)).
+
+no_opponent_is_logged_test() ->
+    ?assertEqual("[mpong] no opponent in game g1, seeking again",
+                 line(hosting, seeking, <<"g1">>, undefined)),
+    ?assertEqual("[mpong] no answer from game g1, seeking again",
+                 line(challenging, seeking, <<"g1">>, <<"h1">>)).
+
+the_first_seek_is_logged_and_nothing_else_is_silent_test() ->
+    ?assertEqual("[mpong] seeking a game", line(starting, seeking, undefined, undefined)),
+    ?assertEqual(silent, find_match:lifecycle(hosting, hosting, <<"g1">>, undefined)).
+
 no_open_game_heard_means_host_test() ->
     ?assertEqual(host, find_match:decide_role([], hex(?A))).
 

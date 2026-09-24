@@ -23,7 +23,7 @@
 -module(find_match).
 -behaviour(gen_server).
 
--export([start_link/1, status/1, decide_role/2, churn_action/4]).
+-export([start_link/1, status/1, decide_role/2, churn_action/4, lifecycle/4]).
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2]).
 
 -define(REMOTE_WALL, 1).
@@ -198,7 +198,9 @@ identified({error, _NotYet}, St) ->
 chosen(host, St) -> hosting(St);
 chosen({challenge, GameId, Host}, St) -> challenging(GameId, Host, St).
 
-seeking(St0) ->
+seeking(#st{role = From, game_id = GameId, peer = Peer} = St0) ->
+    %% Logged from the state being LEFT: the game and peer are cleared just below.
+    announce(lifecycle(From, seeking, GameId, Peer)),
     St = in_role(seeking, St0#st{game_id = undefined, peer = undefined, heard = [],
                                  last_paddle_ms = undefined, paused_since = undefined}),
     later(seek_deadline, jittered(seek_base_ms, seek_jitter_ms, St), St),
@@ -246,9 +248,44 @@ stopped_engine(undefined) -> ok;
 stopped_engine({Pid, Mon}) -> erlang:demonitor(Mon, [flush]), exit(Pid, shutdown), ok.
 
 in_role(Role, #st{unpaired_since = Unpaired, epoch = Epoch} = St) ->
+    announce_role(Role, St),
     Now = now_ms(),
     St#st{role = Role, role_since = Now, epoch = Epoch + 1,
           unpaired_since = unpaired(Role, Unpaired, Now)}.
+
+%% seeking/1 announces itself, from the state it leaves.
+announce_role(seeking, _St) -> ok;
+announce_role(Role, #st{role = From, game_id = GameId, peer = Peer}) ->
+    announce(lifecycle(From, Role, GameId, Peer)).
+
+announce(silent) -> ok;
+announce(Line) -> logger:info("~ts", [Line]).
+
+%% @doc The operator's view of a role change: one line, or `silent' when nothing an
+%% operator needs happened. A bot that plays must say so: the first two bots on the
+%% fleet paired and played while logging nothing past their node id (2026-09-24).
+-spec lifecycle(atom(), atom(), binary() | undefined, binary() | undefined) ->
+    iolist() | silent.
+lifecycle(Same, Same, _GameId, _Peer) ->
+    silent;
+lifecycle(_From, hosting, GameId, _Peer) ->
+    io_lib:format("[mpong] hosting game ~ts, waiting for a challenger", [GameId]);
+lifecycle(_From, challenging, GameId, Host) ->
+    io_lib:format("[mpong] seat requested in game ~ts hosted by ~ts", [GameId, Host]);
+lifecycle(_From, playing_host, GameId, Challenger) ->
+    io_lib:format("[mpong] paired: hosting game ~ts against ~ts", [GameId, Challenger]);
+lifecycle(_From, playing_remote, GameId, Host) ->
+    io_lib:format("[mpong] paired: seated in game ~ts hosted by ~ts", [GameId, Host]);
+lifecycle(From, seeking, GameId, Peer) when From =:= playing_host; From =:= playing_remote ->
+    io_lib:format("[mpong] match ended: game ~ts against ~ts, seeking again", [GameId, Peer]);
+lifecycle(hosting, seeking, GameId, _Peer) ->
+    io_lib:format("[mpong] no opponent in game ~ts, seeking again", [GameId]);
+lifecycle(challenging, seeking, GameId, _Peer) ->
+    io_lib:format("[mpong] no answer from game ~ts, seeking again", [GameId]);
+lifecycle(starting, seeking, _GameId, _Peer) ->
+    "[mpong] seeking a game";
+lifecycle(_From, _To, _GameId, _Peer) ->
+    silent.
 
 unpaired(playing_host, _Unpaired, _Now) -> undefined;
 unpaired(playing_remote, _Unpaired, _Now) -> undefined;
