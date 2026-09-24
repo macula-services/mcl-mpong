@@ -73,6 +73,18 @@ long_unpaired_is_degraded_test() ->
     ?assertEqual({degraded, {unpaired_ms, 900001}},
                  ?SERVICE:health_of(#{role => hosting, unpaired_ms => 900001})).
 
+%% A match whose other end has gone silent is not ok, even while it still counts
+%% as paired: a fleet challenger sat in a dead game reporting healthy
+%% (mcl-mpong#1, 2026-09-24).
+a_silent_peer_is_degraded_test() ->
+    ?assertEqual({degraded, {peer_silent_ms, 3001}},
+                 ?SERVICE:health_of(#{role => playing_remote, unpaired_ms => 0,
+                                      peer_silent_ms => 3001})).
+
+a_peer_heard_recently_is_healthy_test() ->
+    ?assertEqual(ok, ?SERVICE:health_of(#{role => playing_host, unpaired_ms => 0,
+                                          peer_silent_ms => 200})).
+
 a_live_coordinator_answers_health_test() ->
     {ok, Pid} = find_match:start_link(#{name => find_match,
                                         node_id => fun() -> {error, not_yet} end,

@@ -10,6 +10,12 @@
 %%%       └──window expires, none heard──▶ HOSTING ──seat requested──▶ PLAYING_HOST
 %%%                                           └─no challenger in time─▶ SEEKING
 %%%
+%%% EITHER END GOING SILENT ENDS THE MATCH for the other, which seeks again: the
+%%% host pauses on a silent paddle and ends the game past the grace window, and
+%%% a challenger whose host sends no frame for `host_silence_ms' leaves its seat.
+%%% Without the second, a host that restarted left its challenger seated in a
+%%% dead game for good (mcl-mpong#1).
+%%%
 %%% EVERY FACT IS ATTRIBUTED BY ITS VERIFIED PUBLISHER, never by the payload.
 %%% A seat goes to whoever macula says asked for it, a paddle move counts only
 %%% from the challenger holding the seat, and a frame only from the host of our
@@ -23,7 +29,8 @@
 -module(find_match).
 -behaviour(gen_server).
 
--export([start_link/1, status/1, decide_role/2, churn_action/4, lifecycle/4]).
+-export([start_link/1, status/1, decide_role/2, churn_action/4, host_silence/3,
+         lifecycle/4, host_silent_line/3]).
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2]).
 
 -define(REMOTE_WALL, 1).
@@ -39,6 +46,9 @@
     %% The host pauses when the remote paddle goes silent, and ends the game if
     %% it stays silent past the grace window.
     watchdog_ms => 1000, stale_ms => 3000, grace_ms => 10000,
+    %% A challenger whose host sends no frame for this long leaves its seat. The
+    %% host frames many times a second, and keeps framing while paused.
+    host_silence_ms => 10000,
     %% How often each end reads which stations its pool is on.
     stations_ms => 5000}).
 
@@ -61,6 +71,7 @@
     engine      :: {pid(), reference()} | undefined,
     paddle      :: pid() | undefined,
     last_paddle_ms :: integer() | undefined,
+    last_frame_ms  :: integer() | undefined,
     paused_since   :: integer() | undefined,
     heard = []  :: [#{game_id := binary(), host := binary()}],
     stations = [] :: [binary()]
@@ -77,11 +88,13 @@ start_link(#{name := Name} = Opts) ->
 start_link(Opts) ->
     gen_server:start_link(?MODULE, Opts, []).
 
-%% @doc The bot's role, its game, how long it has held the role, and how long
-%% it has been without an opponent (0 while it plays).
+%% @doc The bot's role, its game, how long it has held the role, how long it
+%% has been without an opponent (0 while it plays), and how long the other end
+%% of its match has been silent (0 when it is not playing).
 -spec status(pid() | atom()) -> #{role := atom(), game_id := binary() | undefined,
                                   role_ms := non_neg_integer(),
-                                  unpaired_ms := non_neg_integer()}.
+                                  unpaired_ms := non_neg_integer(),
+                                  peer_silent_ms := non_neg_integer()}.
 status(Server) ->
     gen_server:call(Server, status).
 
@@ -108,6 +121,16 @@ staleness(true, undefined, _Now, _Grace) -> pause;
 staleness(true, Since, Now, Grace) when Now - Since > Grace -> end_stale;
 staleness(true, _Since, _Now, _Grace) -> ok.
 
+%% @doc Given the last frame from our host, now, and the timings: `ok', or
+%% `end_silent' once the host has been silent past `host_silence_ms'.
+-spec host_silence(integer(), integer(), map()) -> ok | end_silent.
+host_silence(LastMs, Now, Opts) ->
+    #{host_silence_ms := Limit} = maps:merge(?DEFAULTS, Opts),
+    silent_past(Now - LastMs > Limit).
+
+silent_past(true) -> end_silent;
+silent_past(false) -> ok.
+
 %%====================================================================
 %% gen_server
 %%====================================================================
@@ -123,7 +146,14 @@ handle_call(status, _From, #st{role = Role, game_id = GameId, role_since = Since
                                unpaired_since = Unpaired} = St) ->
     Now = now_ms(),
     {reply, #{role => Role, game_id => GameId, role_ms => Now - Since,
-              unpaired_ms => unpaired_ms(Unpaired, Now)}, St}.
+              unpaired_ms => unpaired_ms(Unpaired, Now),
+              peer_silent_ms => peer_silent_ms(St, Now)}, St}.
+
+%% The other end's silence: the challenger's paddle for a host, the host's
+%% frames for a challenger.
+peer_silent_ms(#st{role = playing_host, last_paddle_ms = Last}, Now) -> Now - Last;
+peer_silent_ms(#st{role = playing_remote, last_frame_ms = Last}, Now) -> Now - Last;
+peer_silent_ms(_St, _Now) -> 0.
 
 unpaired_ms(undefined, _Now) -> 0;
 unpaired_ms(Since, Now) -> Now - Since.
@@ -157,6 +187,10 @@ handle_info({challenge_timeout, E}, #st{role = challenging, epoch = E} = St) ->
 handle_info({paddle_watchdog, E}, #st{role = playing_host, epoch = E, last_paddle_ms = Last,
                                  paused_since = Since, opts = Opts} = St) ->
     {noreply, churned(churn_action(Last, Since, now_ms(), Opts), St)};
+
+handle_info({frame_watchdog, E}, #st{role = playing_remote, epoch = E, last_frame_ms = Last,
+                                opts = Opts} = St) ->
+    {noreply, host_heard(host_silence(Last, now_ms(), Opts), St)};
 
 handle_info({match_fact, Fact, Payload, #{publisher := Publisher} = Meta}, St) ->
     From = binary:encode_hex(Publisher, lowercase),
@@ -202,7 +236,8 @@ seeking(#st{role = From, game_id = GameId, peer = Peer} = St0) ->
     %% Logged from the state being LEFT: the game and peer are cleared just below.
     announce(lifecycle(From, seeking, GameId, Peer)),
     St = in_role(seeking, St0#st{game_id = undefined, peer = undefined, heard = [],
-                                 last_paddle_ms = undefined, paused_since = undefined}),
+                                 last_paddle_ms = undefined, last_frame_ms = undefined,
+                                 paused_since = undefined}),
     later(seek_deadline, jittered(seek_base_ms, seek_jitter_ms, St), St),
     St.
 
@@ -234,7 +269,23 @@ playing_host(Challenger, #st{game_id = GameId, opts = #{start_engine := Start}} 
 playing_remote(Wall, #st{game_id = GameId} = St0) ->
     {ok, Pid} = play_remote_paddle:start_link(#{game_id => GameId, wall_index => Wall,
                                                 emit => emitter(paddle_moved, St0)}),
-    stations_told(in_role(playing_remote, St0#st{paddle = Pid})).
+    St = in_role(playing_remote, St0#st{paddle = Pid, last_frame_ms = now_ms()}),
+    later(frame_watchdog, watchdog_ms, St),
+    stations_told(St).
+
+%% The host is still framing, or has gone silent: the match is over for us.
+host_heard(ok, St) ->
+    later(frame_watchdog, watchdog_ms, St),
+    St;
+host_heard(end_silent, #st{game_id = GameId, peer = Host, last_frame_ms = Last} = St) ->
+    logger:warning("~ts", [host_silent_line(GameId, Host, now_ms() - Last)]),
+    reseek(St).
+
+%% @doc The line a challenger logs when it leaves a game whose host went silent.
+-spec host_silent_line(binary(), binary(), non_neg_integer()) -> iolist().
+host_silent_line(GameId, Host, SilentMs) ->
+    io_lib:format("[mpong] host ~ts silent for ~b ms in game ~ts, ending the match",
+                  [Host, SilentMs, GameId]).
 
 reseek(#st{paddle = Paddle, engine = Engine} = St) ->
     stopped_paddle(Paddle),
@@ -336,7 +387,7 @@ on_fact(paddle_moved, #{game_id := G} = Paddle, From, Via,
 on_fact(state_broadcast, #{game_id := G} = Frame, From, Via,
         #st{role = playing_remote, game_id = G, peer = From, paddle = Pid} = St) ->
     play_remote_paddle:state_frame(Pid, Frame, Via),
-    St;
+    St#st{last_frame_ms = now_ms()};
 on_fact(_Fact, _Parsed, _From, _Via, St) ->
     St.
 

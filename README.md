@@ -33,7 +33,10 @@ event sourced, for this demo only (Raf, 2026-09-23).
 - **Refuses a third player** with `seat_denied`, so a refusal is a fact on the
   mesh rather than a silence.
 - **Pauses** when the challenger's paddle goes silent for 3 s, and ends the game
-  if it stays silent for 10 s more.
+  if it stays silent for 10 s more. The other way round, a challenger whose host
+  sends no frame for 10 s leaves the game and seeks again, so the pair re-forms
+  after either bot restarts. `/health` says `degraded` while the other end of a
+  match has been silent for more than 3 s.
 
 Every fact is attributed by the **publisher macula verified**, never by the
 payload: a seat goes to whoever asked for it, a move counts only from the bot

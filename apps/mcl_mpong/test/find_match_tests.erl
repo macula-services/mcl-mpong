@@ -93,6 +93,26 @@ paused_past_grace_ends_test() ->
     ?assertEqual(end_stale, find_match:churn_action(1000, 5000, 16000, timings())).
 
 %%------------------------------------------------------------------------------
+%% A silent host
+%%------------------------------------------------------------------------------
+
+%% A seated challenger reads the host's frames. A host that stops sending them
+%% (restarted, crashed, cut off) ends the match for the challenger once the
+%% silence passes `host_silence_ms'; before that it keeps its seat.
+a_recent_frame_keeps_the_seat_test() ->
+    ?assertEqual(ok, find_match:host_silence(1000, 5000, timings())).
+
+a_host_silent_past_its_limit_ends_the_match_test() ->
+    ?assertEqual(end_silent, find_match:host_silence(1000, 1000 + 5001, timings())).
+
+%% The operator sees why the match ended: the game, the host and how long it
+%% was silent (a fleet challenger sat 8 minutes in a dead game saying nothing,
+%% 2026-09-24).
+a_silent_host_is_logged_test() ->
+    ?assertEqual("[mpong] host h1 silent for 5001 ms in game g1, ending the match",
+                 lists:flatten(io_lib:format("~ts", [find_match:host_silent_line(<<"g1">>, <<"h1">>, 5001)]))).
+
+%%------------------------------------------------------------------------------
 %% Two bots, one match
 %%------------------------------------------------------------------------------
 
@@ -189,6 +209,65 @@ a_timer_from_an_earlier_spell_is_ignored() ->
     stop(A),
     exit(Bus, kill).
 
+%% THE MIRROR CASES: either end of a match going silent ends it for the other,
+%% which seeks again. On the fleet a host restarted mid-match and its seated
+%% challenger never left the dead game, logging nothing and reporting healthy,
+%% so the pair did not re-form until the challenger restarted too
+%% (mcl-mpong#1, 2026-09-24).
+a_challenger_whose_host_goes_silent_seeks_again_test_() ->
+    {timeout, 30, fun a_challenger_whose_host_goes_silent_seeks_again/0}.
+
+a_challenger_whose_host_goes_silent_seeks_again() ->
+    Bus = bus(),
+    Timings = (timings())#{host_silence_ms => 1500},
+    {ok, A} = coordinator(?A, Timings, Bus),
+    {ok, B} = coordinator(?B, Timings, Bus),
+    Pairs = [{?A, A}, {?B, B}],
+    Bus ! {coordinators, Pairs},
+    ok = wait_until(fun() -> roles(A, B) =:= lists:sort([playing_host, playing_remote]) end,
+                    15000),
+    {HostId, Host} = paired_as(playing_host, Pairs),
+    {_, Challenger} = paired_as(playing_remote, Pairs),
+    %% The host goes dark: nothing it publishes reaches anyone any more.
+    Bus ! {mute, HostId},
+    ok = wait_until(fun() -> maps:get(peer_silent_ms, find_match:status(Challenger)) > 500 end,
+                    3000),
+    ok = wait_until(fun() -> maps:get(role, find_match:status(Challenger)) =/= playing_remote end,
+                    4000),
+    [stop(P) || P <- [Host, Challenger]],
+    exit(Bus, kill).
+
+a_host_whose_challenger_goes_silent_ends_the_game_test_() ->
+    {timeout, 30, fun a_host_whose_challenger_goes_silent_ends_the_game/0}.
+
+a_host_whose_challenger_goes_silent_ends_the_game() ->
+    Bus = bus(),
+    Timings = (timings())#{stale_ms => 500, grace_ms => 1000},
+    {ok, A} = coordinator(?A, Timings, Bus),
+    {ok, B} = coordinator(?B, Timings, Bus),
+    Pairs = [{?A, A}, {?B, B}],
+    Bus ! {coordinators, Pairs},
+    Bus ! {watch, self()},
+    ok = wait_until(fun() -> roles(A, B) =:= lists:sort([playing_host, playing_remote]) end,
+                    15000),
+    {HostId, Host} = paired_as(playing_host, Pairs),
+    {ChallengerId, Challenger} = paired_as(playing_remote, Pairs),
+    #{game_id := GameId} = find_match:status(Host),
+    Bus ! {mute, ChallengerId},
+    %% First the host pauses the game and says so in its frames, then it ends it.
+    wait_for_frame(fun(#{<<"game_id">> := G, <<"paused">> := P}) -> G =:= GameId andalso P =:= 1;
+                      (_) -> false
+                   end, 5000),
+    wait_for_fact(game_advertised, fun(#{<<"game_id">> := G, <<"status">> := S, <<"host_node_id">> := H}) ->
+                                           G =:= GameId andalso S =:= <<"ended">> andalso H =:= hex(HostId)
+                                   end, 5000),
+    ?assertNotEqual(playing_host, maps:get(role, find_match:status(Host))),
+    [stop(P) || P <- [Host, Challenger]],
+    exit(Bus, kill).
+
+paired_as(Role, Pairs) ->
+    hd([{Id, P} || {Id, P} <- Pairs, maps:get(role, find_match:status(P)) =:= Role]).
+
 %%------------------------------------------------------------------------------
 %% The bus
 %%------------------------------------------------------------------------------
@@ -198,24 +277,30 @@ a_timer_from_an_earlier_spell_is_ignored() ->
 %% the facts an earlier test's bus sent it; a new bus starts from an empty one.
 bus() ->
     flush_seen(),
-    spawn(fun() -> bus_loop([], []) end).
+    spawn(fun() -> bus_loop([], [], []) end).
 
 flush_seen() ->
     receive {seen, _, _} -> flush_seen()
     after 0 -> ok
     end.
 
-bus_loop(Coordinators, Watchers) ->
+%% A muted node's publications reach nobody: the node has gone dark.
+bus_loop(Coordinators, Watchers, Muted) ->
     receive
-        {coordinators, Cs} -> bus_loop(Cs, Watchers);
-        {watch, Pid} -> bus_loop(Coordinators, [Pid | Watchers]);
+        {coordinators, Cs} -> bus_loop(Cs, Watchers, Muted);
+        {watch, Pid} -> bus_loop(Coordinators, [Pid | Watchers], Muted);
+        {mute, Id} -> bus_loop(Coordinators, Watchers, [Id | Muted]);
         {inject, From, Fact, Payload} ->
             deliver(From, Fact, Payload, Coordinators, Watchers),
-            bus_loop(Coordinators, Watchers);
+            bus_loop(Coordinators, Watchers, Muted);
         {publish, From, Fact, Payload} ->
-            deliver(From, Fact, Payload, Coordinators, Watchers),
-            bus_loop(Coordinators, Watchers)
+            delivered(lists:member(From, Muted), From, Fact, Payload, Coordinators, Watchers),
+            bus_loop(Coordinators, Watchers, Muted)
     end.
+
+delivered(true, _From, _Fact, _Payload, _Coordinators, _Watchers) -> ok;
+delivered(false, From, Fact, Payload, Coordinators, Watchers) ->
+    deliver(From, Fact, Payload, Coordinators, Watchers).
 
 deliver(From, Fact, Payload, Coordinators, Watchers) ->
     ok = macula_frame:check_payload(Payload),
@@ -240,7 +325,7 @@ timings() ->
     #{seek_base_ms => 200, seek_jitter_ms => 400, reannounce_ms => 100,
       host_wait_base_ms => 1500, host_wait_jitter_ms => 1500,
       challenge_wait_ms => 1000, watchdog_ms => 200, stale_ms => 3000,
-      grace_ms => 10000, stations_ms => 200}.
+      grace_ms => 10000, host_silence_ms => 5000, stations_ms => 200}.
 
 roles(A, B) ->
     lists:sort([maps:get(role, find_match:status(P)) || P <- [A, B]]).

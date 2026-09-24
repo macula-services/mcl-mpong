@@ -9,6 +9,17 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Fixed
 
+- **A challenger whose host goes silent leaves the game.** A seated challenger
+  had no watchdog, so a host that restarted mid-match left it in the dead game
+  for good: publishing paddle moves nobody read, ignoring every open game,
+  logging nothing and reporting healthy. On the fleet that stopped the pair from
+  re-forming until the challenger restarted too, and looked like a macula
+  12.1/12.2 incompatibility; it was not (mcl-mpong#1). The challenger now ends
+  the match after `host_silence_ms` (10 s) without a frame, logs the game, the
+  host and the silence, and seeks again. `status/1` reports `peer_silent_ms`, and
+  `/health` is `degraded` while it exceeds 3 s. The mirror case, a host whose
+  challenger goes silent, is now held by a test too.
+
 - **A bot that plays says so.** Every role change an operator cares about is one
   info line: seeking, hosting, seat requested, paired (as host or seated), match
   ended, no opponent / no answer. The first two bots on the fleet paired and played

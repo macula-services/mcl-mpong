@@ -22,6 +22,9 @@
 
 %% Unpaired this long is the mesh failing to carry two bots to each other.
 -define(UNPAIRED_LIMIT_MS, 900000).
+%% The other end of a match silent this long (find_match's `stale_ms', when the
+%% host pauses) is a match not being played.
+-define(PEER_SILENT_LIMIT_MS, 3000).
 
 info() ->
     #{name => <<"mcl-mpong">>,
@@ -56,6 +59,8 @@ health_of(unavailable) ->
     {down, match_finder_unavailable};
 health_of(#{unpaired_ms := Ms}) when Ms > ?UNPAIRED_LIMIT_MS ->
     {degraded, {unpaired_ms, Ms}};
+health_of(#{peer_silent_ms := Ms}) when Ms > ?PEER_SILENT_LIMIT_MS ->
+    {degraded, {peer_silent_ms, Ms}};
 health_of(#{}) ->
     ok.
 
