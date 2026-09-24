@@ -10,6 +10,13 @@
         {realm_name, "${MCL_REALM_NAME}"}
     ]},
     {mcl_om, [
+        %% ⚠ THE ORG, FIXED IN THE RELEASE: one org per service, named after the
+        %% repository, and the org the match facts are published under
+        %% (mcl_mpong_facts). Unset, mcl_om reads `_', sends the realm no claim
+        %% and advertises nothing, while /health still says "ok": the first bot
+        %% ran exactly like that on 2026-09-24. A test holds this line to the
+        %% facts' org.
+        {org,               <<"mcl-mpong">>},
         %% Without this, mcl_om_identity:load_node_key/0 returns `undefined'
         %% forever and identity_key/0 stays {error, no_identity_key} -- a
         %% service that declares a handler-bearing capability() then silently

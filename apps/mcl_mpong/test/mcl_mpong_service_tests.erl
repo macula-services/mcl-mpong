@@ -147,6 +147,19 @@ the_realm_name_is_configured_test() ->
     {ok, Compose} = file:read_file(alongside("deploy/docker-compose.yml")),
     ?assertNotEqual(nomatch, binary:match(Compose, <<"MCL_REALM_NAME=">>)).
 
+%% ⚠ THE ORG IS IN THE SHIPPED CONFIG OR THE BOT NEVER CLAIMS IT. mcl_om sends no
+%% claim, and advertises nothing, when its `org' is unset (it reads `_'), so the
+%% realm has no row to admit and the node still answers /health "ok". That is how
+%% the first bot on beam01 ran on 2026-09-24. The org it claims must be the org
+%% its facts are published under, or it claims one org and speaks in another.
+the_org_claimed_is_the_org_the_facts_are_published_under_test() ->
+    {ok, Config} = file:read_file(alongside("config/sys.config.src")),
+    {match, [Claimed]} = re:run(Config, "\\{org,\\s*<<\"([^\"]+)\">>\\}",
+                                [{capture, all_but_first, binary}]),
+    Topic = mcl_mpong_facts:topic(<<"io.macula">>, hd(mcl_mpong_facts:facts())),
+    [<<"io.macula">>, Published | _] = binary:split(Topic, <<"/">>, [global]),
+    ?assertEqual(Published, Claimed).
+
 with_realm_name(Name, Fun) ->
     Old = application:get_env(mcl_mpong, realm_name),
     application:set_env(mcl_mpong, realm_name, Name),

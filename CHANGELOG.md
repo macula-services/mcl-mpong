@@ -7,6 +7,14 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+### Fixed
+
+- **The bot claims its org.** `config/sys.config.src` never set mcl_om's `org`,
+  so mcl_om read `_`, sent the realm no claim and advertised nothing while
+  `/health` said `ok` (the first bot on beam01, 2026-09-24). It is fixed in the
+  release as `mcl-mpong`, and a test holds it to the org the facts are
+  published under.
+
 ### Changed
 
 - **mcl_om `~> 0.27`.** 0.27.0 drops barrel_docdb and with it the rocksdb C++
