@@ -1,8 +1,14 @@
 # Build the OCI image for mcl-mpong and push to the registry.
 #
-# Pushes BOTH :latest and the semver tag. The deployed compose tracks :latest
-# under watchtower for zero-touch deploys, and the semver tags stay published so a
-# bad release can be pinned back to a known one.
+# TWO CHANNELS, AND ONLY A RELEASE MOVES :latest.
+#
+#   push of v*   : publishes :<semver> and :latest  <- the dev fleet's deploy channel
+#   push to main : publishes :main and :<sha>       <- the tip, for trying; nothing follows it
+#
+# The dev fleet (macula-fleet) runs :latest: each box's reconciler pulls it, verifies the
+# digest it resolved to (signature, SBOM, provenance) and runs that digest. So a green v* tag
+# IS the deploy, with no commit to the fleet, and a push to main deploys nothing. The semver
+# tags stay published, so a bad release can be pinned back to a known one.
 #
 # NOTE ON PUSHING THIS FILE. An HTTPS push that creates or updates anything under
 # .github/workflows/ needs a token carrying the `workflow' scope, and the error
@@ -15,7 +21,7 @@ on:
   push:
     branches: [main]
     tags:     ['v*']
-    # A push to main rolls every box watching :latest. One that changes no
+    # A push to main rebuilds :main (a tag push ignores this filter). One that changes no
     # code must not: a docs-only commit once reset a whole fleet.
     paths-ignore:
       - '**.md'
@@ -52,11 +58,15 @@ jobs:
       - name: Set tag
         id: tag
         run: |
-          if [[ "${GITHUB_REF}" == refs/tags/v* ]]; then
-            echo "tag=${GITHUB_REF#refs/tags/v}" >> "$GITHUB_OUTPUT"
-          else
-            echo "tag=latest" >> "$GITHUB_OUTPUT"
-          fi
+          # :latest is the dev fleet's deploy channel: it moves only on a v* tag whose build went
+          # green, and a box picks it up on its next reconcile. main publishes :main and :<sha>
+          # for trying the tip; no box follows those.
+          img=ghcr.io/macula-services/mcl-mpong
+          case "${GITHUB_REF}" in
+            refs/tags/v*)    echo "tags=$img:${GITHUB_REF#refs/tags/v},$img:latest" >> "$GITHUB_OUTPUT" ;;
+            refs/heads/main) echo "tags=$img:main,$img:${GITHUB_SHA}" >> "$GITHUB_OUTPUT" ;;
+            *) echo "::error::only a v* tag publishes a version and :latest, only main :main and :<sha>; refusing ${GITHUB_REF}"; exit 1 ;;
+          esac
 
       - name: Build and push
         uses: docker/build-push-action@v6
@@ -64,9 +74,7 @@ jobs:
           context: .
           file: Containerfile
           push: true
-          tags: |
-            ghcr.io/macula-services/mcl-mpong:latest
-            ghcr.io/macula-services/mcl-mpong:${{ steps.tag.outputs.tag }}
+          tags: ${{ steps.tag.outputs.tags }}
           # The commit the image was built from, readable from the image itself.
           build-args: |
             REVISION=${{ github.sha }}
