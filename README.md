@@ -10,9 +10,7 @@ and which stations each end is on.
 
 Built and tested. Its fleet definition (two bots, pinned by digest) is in `macula-fleet`; see Deployment. Runs on macula 12 through `mcl_om`.
 The spectator, macula-portal's `mpong_subscriber`, still reads the old topics
-and gets repointed at the contract below. This replaces
-`hecate-services/hecate-mpong-bot`, which ran on macula 10 and inherits nothing:
-no identity, no topic, no store.
+and gets repointed at the contract below.
 
 **No event store, by decision.** A match is throwaway state held in the engine
 process. This is a scoped waiver of the house rule that business processes are
