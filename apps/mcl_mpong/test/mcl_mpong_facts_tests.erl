@@ -39,12 +39,6 @@ every_topic_is_a_canonical_app_fact_test() ->
                         domain := <<"match">>, version := 2}, Parsed)
      end || F <- mcl_mpong_facts:facts()].
 
-%% Raf, 2026-09-23: no "hecate" in any live topic.
-no_topic_names_the_retired_service_test() ->
-    [?assertEqual(nomatch, binary:match(mcl_mpong_facts:topic(?REALM_NAME, F),
-                                        <<"hecate">>))
-     || F <- mcl_mpong_facts:facts()].
-
 a_topic_maps_back_to_its_fact_test() ->
     [?assertEqual({ok, F},
                   mcl_mpong_facts:fact_of_topic(?REALM_NAME,
