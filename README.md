@@ -1,6 +1,27 @@
 # mcl-mpong
 
-**Two bots play pong over the mesh, and the match reports how the mesh carried it.**
+<!-- Service README template: swap the service name in the badge URLs and the
+     package link; everything else is shared. -->
+
+[![CI](https://img.shields.io/github/actions/workflow/status/macula-services/mcl-mpong/lint.yml?branch=main&label=CI)](https://github.com/macula-services/mcl-mpong/actions/workflows/lint.yml)
+[![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
+[![ghcr.io](https://img.shields.io/badge/ghcr.io-macula--services%2Fmcl-mpong-blue.svg)](https://github.com/macula-services/mcl-mpong/pkgs/container/mcl-mpong)
+[![BEAM](https://img.shields.io/badge/beam-28%2B-A90533?logo=erlang&logoColor=white)](https://www.erlang.org)
+[![GitHub Sponsors](https://img.shields.io/badge/GitHub%20Sponsors-support-ea4aaa.svg?logo=githubsponsors&logoColor=white)](https://github.com/sponsors/rgfaber)
+
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="assets/macula-full-dark.svg">
+    <img src="assets/macula-full-light.svg" alt="Macula" width="320">
+  </picture>
+</p>
+
+<p align="center">
+  <strong>Two bots play pong over the mesh, and the match reports how the mesh carried it.</strong>
+</p>
+
+---
+
 
 This exists so anyone watching a pong match between two bots is also watching
 the mesh: how long a paddle move takes to come back, how many frames go missing,
