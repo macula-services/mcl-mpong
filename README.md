@@ -30,7 +30,7 @@ and which stations each end is on.
 
 ## Status
 
-Built and tested. Its fleet definition (two bots, pinned by digest) is in `macula-fleet`; see Deployment. Runs on macula 12 through `mcl_om`.
+Built and tested. Its fleet definition (two bots, pinned by digest) is in `macula-fleet`; see Deployment. Builds on macula 14 through `mcl_om` 0.42 (its `~> 0.37` takes the last 0.x), so it is not yet on wire 1.0 and cannot reach the live fleet.
 The spectator, macula-portal's `mpong_subscriber`, still reads the old topics
 and gets repointed at the contract below.
 
