@@ -31,8 +31,8 @@ and which stations each end is on.
 ## Status
 
 Built and tested. Its fleet definition (two bots, pinned by digest) is in `macula-fleet`; see Deployment. Builds on macula 16 through `mcl_om` 1.4 (wire 1.0), the wire the live fleet runs.
-The spectator, macula-portal's `mpong_subscriber`, still reads the old topics
-and gets repointed at the contract below.
+The spectator, macula-portal's `mpong_subscriber`, reads `game_advertised_v2`
+and `state_broadcast_v2` from the contract below.
 
 **No event store, by decision.** A match is throwaway state held in the engine
 process. This is a scoped waiver of the house rule that business processes are
@@ -179,8 +179,8 @@ included. It does not play a match to its end.
 CI pushes `ghcr.io/macula-services/mcl-mpong:latest` on every push to `main`
 that touches code, and the semver tag on a `v*` tag. A push deploys nothing:
 the fleet runs the image **pinned by digest** in `macula-io/macula-fleet`
-(`edge/scripts/docker-compose.mcl-mpong.yml`), two bots, beam01 dialling
-nuremberg and beam02 helsinki, so every match crosses stations. A new build
+(`edge/scripts/docker-compose.mcl-mpong.yml`), two bots, each dialling a
+different station, so every match crosses stations. A new build
 reaches them only when that pin moves.
 
 The package is public.
