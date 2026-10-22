@@ -133,7 +133,7 @@ class Diagram:
 def context():
     d = Diagram("c4-context.svg", "mcl-mpong system context", 1000, 690)
     d.box("b-ext", 40, 30, 270, 120, "Spectator", "[External system]",
-          ["macula-portal's mpong_subscriber:", "it reads the six topics and", "draws the path they took"])
+          ["macula-portal's mpong_subscriber:", "draws the path a match took; it", "still reads the old topics"])
     d.box("b-per", 365, 30, 270, 120, "Operator", "[Person]",
           ["Runs the two bots, one per", "box, and supplies the realm", "and the pinned stations"],
           person=True)
@@ -147,7 +147,7 @@ def context():
     d.box("b-mac", 690, 430, 270, 120, "Macula stations, mesh DHT", "[Macula infrastructure]",
           ["The pinned dial; every fact goes", "through a station, and the DHT", "holds each advertisement"])
     d.edge("M400 186V168H175V150")
-    d.text("t-rel", 200, 160, "reads the six topics,"); d.text("t-rel", 200, 176, "draws the path")
+    d.text("t-rel", 200, 160, "the six facts, for any"); d.text("t-rel", 200, 176, "subscriber to read")
     d.edge("M500 150V186"); d.text("t-rel", 508, 164, "deploys the two bots")
     d.edge("M825 150V168H620V186"); d.text("t-rel", 632, 160, "the six match facts, both ways")
     d.edge("M460 338V430"); d.text("t-rel", 468, 384, "trust anchor, grant")
