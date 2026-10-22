@@ -14,7 +14,7 @@ store.
 
 | Element | Kind | Role |
 | --- | --- | --- |
-| mcl-mpong | In scope | Publishes and subscribes to the six match facts on `io.macula/mcl-mpong/mpong/match/*_v2`, and answers `/health` on 8472. No procedures of its own and no store: a match lives in one process |
+| mcl-mpong | In scope | Publishes and subscribes to the six match facts on `io.macula/mcl-mpong/mpong/match/*_v2`, and answers `/health` on 8472. It serves no procedure of its own; `mcl_om` adds `mcl-mpong/info` and `mcl-mpong/get_limits` to every service, both open; `capabilities/0` is the list. No store: a match lives in one process |
 | Spectator | External system | macula-portal's `mpong_subscriber`, which draws the path a match took. It reads `game_advertised_v2` and `state_broadcast_v2`, two of these six |
 | Operator | Person | Runs the two bots, one per box, and supplies the realm and the pinned stations |
 | Other bot | External system | A second mcl-mpong on another box: host or challenger, the other end of the match |
@@ -32,12 +32,12 @@ state in the engine process, so the bot owns no reckon-db and no read model.
 
 | Component | Technology | Responsibility |
 | --- | --- | --- |
-| `mcl_mpong_app` | OTP application | `start/2` calls `mcl_om:boot(mcl_mpong_service)`. The service exports no `store_id/0` or `data_dir/0`, so mcl_om starts no reckon-db and no subscription |
+| `mcl_mpong_app` | OTP application | `start/2` calls `mcl_om:boot(mcl_mpong_service)`. The service exports no `store_id/0` or `data_dir/0`, and mcl_om opens no reckon-db: a match is throwaway state in the engine process |
 | `mcl_mpong_service` | the `mcl_om_service` behaviour | The six callbacks plus `subscriptions/0`, which gives mcl_om one subscriber per match fact. `capabilities/0` is empty; scope `mcl-mpong`, 30 days, no actions and no resources. `start/1` refuses a realm whose tag does not match `MCL_REALM_NAME` |
 | `mcl_mpong_sup` | supervisor, `rest_for_one` | Starts `host_match_sup`, then `find_match`. If the engine supervisor goes, the coordinator is restarted with it, since its monitor on a hosted engine went too |
 | `mcl_mpong_facts` | Erlang module | The six topics and their payloads at version 2, and `parse/2` for what a subscriber receives. A test pins every topic and every key |
 | `host_match_sup` | supervisor, `simple_one_for_one` | `start_engine/1` puts one engine under it. The engine is `temporary`: a match that crashes is over, not restarted |
-| `find_match` | `gen_server`, the coordinator | Owns the role and the current match: seeking, hosting, challenging, playing. Publishes the advert and seat facts itself, through `mcl_om_pubsub:publish/2` on a `mcl_mpong_facts` topic, and hands the engine and the paddle an emit closure that builds and publishes their payloads in their own processes |
+| `find_match` | `gen_server`, the coordinator | Owns the role and the current match: seeking, hosting, challenging, playing. Publishes the game and seat facts itself, through `mcl_om_pubsub:publish/2` on a `mcl_mpong_facts` topic, and hands the engine and the paddle an emit closure that publishes the payload each child builds in its own process |
 | `mpong_game_engine` | `gen_server`, 25 Hz | The host's authoritative game: a frame every fifth tick, 5 Hz, emitted through the closure. Calls `mpong_ball`, `mpong_ai`, `mpong_collision` and `mpong_obstacles` |
 | `play_remote_paddle` | `gen_server`, 25 Hz | The challenger's paddle: steers at the last ball it saw and emits a numbered move every second tick, carrying its own view of the mesh |
 | `mesh_gauge` | Erlang module, pure | Sequence gaps, round trip (minus the time the host held the move, so no clock sync is assumed), and the stations a pool is on |

@@ -70,8 +70,8 @@
 <text class="t-desc" x="381" y="256">Publishes and subscribes to the six</text>
 <text class="t-desc" x="381" y="272">match facts on io.macula/mcl-mpong/</text>
 <text class="t-desc" x="381" y="288">mpong/match/*_v2, and answers /health</text>
-<text class="t-desc" x="381" y="304">on 8472. No own procedures, no store:</text>
-<text class="t-desc" x="381" y="320">a match lives in one process</text>
+<text class="t-desc" x="381" y="304">on 8472. No procedure of its own, and</text>
+<text class="t-desc" x="381" y="320">no store; a match lives in one process</text>
 <rect class="b-mac" x="365" y="430" width="270" height="120" rx="10"/>
 <text class="t-name" x="381" y="458">macula-realm</text>
 <text class="t-type" x="381" y="476">[Macula infrastructure]</text>
@@ -95,9 +95,9 @@
 <text class="t-rel" x="468" y="384">trust anchor, grant</text>
 <path class="edge" d="M620 338V370H825V430" marker-end="url(#a)"/>
 <text class="t-rel" x="632" y="364">publishes and subscribes</text>
-<text class="t-desc" x="40" y="596">No event store, by decision: a match is throwaway state in the engine process, and capabilities/0 is empty, so the</text>
-<text class="t-desc" x="40" y="614">bot answers no procedure of its own. Its whole output is the facts it publishes, and a match needs two bots on different boxes:</text>
-<text class="t-desc" x="40" y="632">one hosts the authoritative game and frames at 5 Hz, the other steers the far paddle and reports what it saw.</text>
+<text class="t-desc" x="40" y="596">No event store, by decision (Raf, 2026-09-23): a match is throwaway state in the engine process. It serves no procedure of its own;</text>
+<text class="t-desc" x="40" y="614">mcl_om adds mcl-mpong/info and mcl-mpong/get_limits to every service, both open; capabilities/0 is the list. Its whole output is the</text>
+<text class="t-desc" x="40" y="632">facts it publishes. A match needs two bots on different boxes: one hosts the authoritative game and frames at 5 Hz, the other steers the far paddle.</text>
 <rect class="b-sys" x="24" y="650" width="22" height="14" rx="3"/>
 <text class="t-leg" x="54" y="662">In scope</text>
 <rect class="b-per" x="110.8" y="650" width="22" height="14" rx="3"/>

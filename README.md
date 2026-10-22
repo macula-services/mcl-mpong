@@ -176,12 +176,13 @@ included. It does not play a match to its end.
 
 ## Deployment
 
-CI pushes `ghcr.io/macula-services/mcl-mpong:latest` on every push to `main`
-that touches code, and the semver tag on a `v*` tag. A push deploys nothing:
-the fleet runs the image **pinned by digest** in `macula-io/macula-fleet`
+CI pushes `:main` and `:<sha>` on every push to `main` that touches code. A
+`v*` tag pushes the semver tag, and moves `:latest` only once attest has signed
+it. A push deploys nothing by itself: the fleet runs a release **pinned by
+digest** in `macula-io/macula-fleet`
 (`edge/scripts/docker-compose.mcl-mpong.yml`), two bots, each dialling a
-different station, so every match crosses stations. A new build
-reaches them only when that pin moves.
+different station, so every match crosses stations. A new build reaches them
+only when that pin moves.
 
 The package is public.
 
@@ -189,8 +190,11 @@ The package is public.
 
 `mcl_mpong_service` implements the six `mcl_om_service` callbacks, all resolved
 **by name** at startup, plus `subscriptions/0`, which gives mcl_om one
-subscriber per match fact. It announces no capability and asks the realm for no
-authority: the bot's whole output is its published facts.
+subscriber per match fact. It serves no procedure of its own; `mcl_om` adds
+`mcl-mpong/info` and `mcl-mpong/get_limits` to every service, both open;
+`capabilities/0` is the list, and the bot's whole output is its published
+facts. The authority it asks the realm for is the scope alone: no actions and
+no resources.
 
 ## License
 

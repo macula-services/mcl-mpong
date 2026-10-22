@@ -64,7 +64,7 @@ health_of(#{peer_silent_ms := Ms}) when Ms > ?PEER_SILENT_LIMIT_MS ->
 health_of(#{}) ->
     ok.
 
-%% Nothing callable. The bot's whole output is its published facts.
+%% No procedure of its own: the bot's whole output is its published facts.
 capabilities() -> [].
 
 %% THE AUTHORITY THIS SERVICE ASKS THE REALM FOR, and deliberately nothing more.

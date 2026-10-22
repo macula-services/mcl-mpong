@@ -141,7 +141,7 @@ def context():
           ["A second mcl-mpong on another", "box: host or challenger, the", "other end of the match"])
     d.box("b-sys", 365, 186, 270, 152, "mcl-mpong", "[mcl_om mesh service]",
           ["Publishes and subscribes to the six", "match facts on io.macula/mcl-mpong/", "mpong/match/*_v2, and answers /health",
-           "on 8472. No own procedures, no store:", "a match lives in one process"])
+           "on 8472. No procedure of its own, and", "no store; a match lives in one process"])
     d.box("b-mac", 365, 430, 270, 120, "macula-realm", "[Macula infrastructure]",
           ["The trust anchor and the grant:", "the org mcl-mpong, scope for 30", "days, and the boot claim"])
     d.box("b-mac", 690, 430, 270, 120, "Macula stations, mesh DHT", "[Macula infrastructure]",
@@ -152,19 +152,19 @@ def context():
     d.edge("M825 150V168H620V186"); d.text("t-rel", 632, 160, "the six match facts, both ways")
     d.edge("M460 338V430"); d.text("t-rel", 468, 384, "trust anchor, grant")
     d.edge("M620 338V370H825V430"); d.text("t-rel", 632, 364, "publishes and subscribes")
-    d.text("t-desc", 40, 596, "No event store, by decision: a match is throwaway state in the engine process, and capabilities/0 is empty, so the")
-    d.text("t-desc", 40, 614, "bot answers no procedure of its own. Its whole output is the facts it publishes, and a match needs two bots on different boxes:")
-    d.text("t-desc", 40, 632, "one hosts the authoritative game and frames at 5 Hz, the other steers the far paddle and reports what it saw.")
+    d.text("t-desc", 40, 596, "No event store, by decision (Raf, 2026-09-23): a match is throwaway state in the engine process. It serves no procedure of its own;")
+    d.text("t-desc", 40, 614, "mcl_om adds mcl-mpong/info and mcl-mpong/get_limits to every service, both open; capabilities/0 is the list. Its whole output is the")
+    d.text("t-desc", 40, 632, "facts it publishes. A match needs two bots on different boxes: one hosts the authoritative game and frames at 5 Hz, the other steers the far paddle.")
     d.legend(650, boundary=False)
     d.write()
 
 
 def components():
-    d = Diagram("c4-components.svg", "mcl-mpong components", 1040, 1270)
+    d = Diagram("c4-components.svg", "mcl-mpong components", 1040, 1290)
     d.bound(40, 40, 968, 970, "mcl-mpong [Container]")
     d.box("b-cmp", 56, 70, 456, 120, "mcl_mpong_app", "[OTP application]",
-          ["start/2 calls mcl_om:boot(mcl_mpong_service).", "No store_id/0 or data_dir/0 on the service, so",
-           "mcl_om starts no reckon-db and no subscription."], code=True)
+          ["start/2 calls mcl_om:boot(mcl_mpong_service).", "No store_id/0 or data_dir/0 on the service,",
+           "and mcl_om opens no reckon-db."], code=True)
     d.box("b-sys", 536, 70, 456, 120, "mcl_mpong_service", "[:mcl_om_service behaviour]",
           ["The six callbacks plus subscriptions/0, which", "gives mcl_om one subscriber per match fact.",
            "capabilities/0 is empty; scope mcl-mpong, 30 days."], code=True)
@@ -179,7 +179,7 @@ def components():
            "is over, not restarted."], code=True)
     d.box("b-sys", 536, 390, 456, 120, "find_match", "[gen_server, the coordinator]",
           ["Owns the role and the current match: seeking,", "hosting, challenging, playing. Publishes the",
-           "advert and seat facts; each child emits its own."], code=True)
+           "game and seat facts; each child emits its own."], code=True)
     d.box("b-cmp", 56, 550, 456, 120, "mpong_game_engine", "[gen_server, 25 Hz]",
           ["The host's authoritative game: a frame every", "fifth tick, 5 Hz, emitted through the closure",
            "find_match gave it. Ball, ai, collision calls."], code=True)
@@ -206,21 +206,22 @@ def components():
     d.edge("M536 490H520V530H284V510"); d.text("t-rel", 340, 526, "start_engine/1")
     d.edge("M200 510V550"); d.text("t-rel", 208, 546, "one engine, temporary")
     d.edge("M864 510V550"); d.text("t-rel", 856, 534, "starts on seat_reserved", anchor="end")
-    d.edge("M600 390V350"); d.text("t-rel", 608, 380, "advert and seat facts")
+    d.edge("M600 390V350"); d.text("t-rel", 608, 380, "game and seat facts")
     d.edge("M512 620H530V360H760V350"); d.text("t-rel", 768, 380, "builds each frame")
     d.edge("M992 610H1012V360H900V350"); d.text("t-rel", 908, 380, "builds each move")
     d.edge("M200 670V710"); d.text("t-rel", 208, 694, "moves seen, missed")
     d.edge("M536 610H520V690H350V710"); d.text("t-rel", 400, 686, "frames and round trip")
     d.edge("M992 770H1024V530H880V510"); d.text("t-rel", 890, 522, "facts as they arrive")
     d.edge("M512 930H536"); d.text("t-rel", 524, 922, "dials", anchor="middle")
-    d.box("b-ext", 64, 1040, 920, 104, "Host environment", "[read at boot; nothing here is baked into the image]",
+    d.box("b-ext", 64, 1040, 920, 104, "Host environment", "[environment; the image sets the node name, host, cookie and health port]",
           ["MCL_REALM and MCL_REALM_NAME are both required and must agree: the service refuses to start unless the sha256 of the name is the tag.",
            "MCL_REALM_KEY is the trust anchor; MACULA_STATION_SEEDS with MACULA_STATION_NODE_IDS is the pinned dial; MCL_HEALTH_PORT is 8472."],
           code=True)
-    d.text("t-desc", 64, 1180, "No event store, by decision: a match is throwaway state in the engine process, and capabilities/0 is empty, so the bot answers no")
-    d.text("t-desc", 64, 1198, "procedure (Raf, 2026-09-23). find_match publishes the advert and seat facts itself, and hands each child an emit closure that")
-    d.text("t-desc", 64, 1216, "builds and publishes there, a frame each and a move each. Health is the match's: degraded when unpaired 15 minutes or the peer silent 3 s.")
-    d.legend(1240)
+    d.text("t-desc", 64, 1180, "No event store, by decision: a match is throwaway state in the engine process. It serves no procedure of its own; capabilities/0 is the list,")
+    d.text("t-desc", 64, 1198, "and mcl_om adds mcl-mpong/info and mcl-mpong/get_limits to every service, both open. find_match publishes the game and seat facts")
+    d.text("t-desc", 64, 1216, "itself, and hands each child an emit closure that publishes the payload the child builds there, a frame each and a move each.")
+    d.text("t-desc", 64, 1234, "Health is the match's: degraded when unpaired 15 minutes or the peer silent 3 s.")
+    d.legend(1260)
     d.write()
 
 

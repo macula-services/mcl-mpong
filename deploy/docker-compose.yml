@@ -33,8 +33,7 @@ services:
       # routine) would mint a new node id while the service looks healthy.
       - secrets:/etc/mcl/secrets
     labels:
-      # Only meaningful if you run watchtower: it pulls a new :latest and
-      # recreates the container. Harmless otherwise.
+      # Only meaningful if you run watchtower yourself. Harmless otherwise.
       - "com.centurylinklabs.watchtower.enable=true"
     environment:
       # No default. A service that guesses its realm announces itself where
