@@ -5,6 +5,18 @@ All notable changes to this project are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## Unreleased
+
+- **macula is declared, at 16** (macula-codebase-checks#4, #14). The
+  service called macula modules and compiled against `macula_response`
+  without declaring the application: it arrived transitively through
+  `mcl_om`, so a rebuild took whatever major the newest mcl_om carried.
+  `macula` is now a direct dependency at `~> 16.0` and `mcl_om` is at
+  `~> 1.4`, the release whose own base is macula 16. 16.0 keeps wire 1.0,
+  so this service still speaks to every wire 1.0 box; what it adds is the
+  revocation bound (macula#118). This service gates no overlay and issues
+  no endorsement.
+
 ## [Unreleased]
 
 ## [0.1.0] - 2026-10-05
