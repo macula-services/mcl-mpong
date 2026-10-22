@@ -81,8 +81,8 @@
 <text class="t-code" x="552" y="418">find_match</text>
 <text class="t-type" x="552" y="436">[gen_server, the coordinator]</text>
 <text class="t-desc" x="552" y="460">Owns the role and the current match: seeking,</text>
-<text class="t-desc" x="552" y="476">hosting, challenging, playing. Publishes every</text>
-<text class="t-desc" x="552" y="492">fact itself, through mcl_om_pubsub:publish/2.</text>
+<text class="t-desc" x="552" y="476">hosting, challenging, playing. Publishes the</text>
+<text class="t-desc" x="552" y="492">advert and seat facts; each child emits its own.</text>
 <rect class="b-cmp" x="56" y="550" width="456" height="120" rx="10"/>
 <text class="t-code" x="72" y="578">mpong_game_engine</text>
 <text class="t-type" x="72" y="596">[gen_server, 25 Hz]</text>
@@ -127,7 +127,7 @@
 <text class="t-rel" x="300" y="206">starts</text>
 <path class="edge" d="M200 350V390" marker-end="url(#a)"/>
 <text class="t-rel" x="208" y="374">starts</text>
-<path class="edge" d="M350 350V370H700V390" marker-end="url(#a)"/>
+<path class="edge" d="M350 350V370H520V430H536" marker-end="url(#a)"/>
 <text class="t-rel" x="420" y="366">starts second</text>
 <path class="edge" d="M536 490H520V530H284V510" marker-end="url(#a)"/>
 <text class="t-rel" x="340" y="526">start_engine/1</text>
@@ -135,12 +135,16 @@
 <text class="t-rel" x="208" y="546">one engine, temporary</text>
 <path class="edge" d="M864 510V550" marker-end="url(#a)"/>
 <text class="t-rel" x="856" y="534" text-anchor="end">starts on seat_reserved</text>
-<path class="edge" d="M864 390V350" marker-end="url(#a)"/>
-<text class="t-rel" x="872" y="374">builds every payload</text>
+<path class="edge" d="M600 390V350" marker-end="url(#a)"/>
+<text class="t-rel" x="608" y="380">advert and seat facts</text>
+<path class="edge" d="M512 620H530V360H760V350" marker-end="url(#a)"/>
+<text class="t-rel" x="768" y="380">builds each frame</text>
+<path class="edge" d="M992 610H1012V360H900V350" marker-end="url(#a)"/>
+<text class="t-rel" x="908" y="380">builds each move</text>
 <path class="edge" d="M200 670V710" marker-end="url(#a)"/>
-<text class="t-rel" x="208" y="694">frames seen, missed</text>
+<text class="t-rel" x="208" y="694">moves seen, missed</text>
 <path class="edge" d="M536 610H520V690H350V710" marker-end="url(#a)"/>
-<text class="t-rel" x="400" y="686">moves and round trip</text>
+<text class="t-rel" x="400" y="686">frames and round trip</text>
 <path class="edge" d="M992 770H1024V530H880V510" marker-end="url(#a)"/>
 <text class="t-rel" x="890" y="522">facts as they arrive</text>
 <path class="edge" d="M512 930H536" marker-end="url(#a)"/>
@@ -151,8 +155,8 @@
 <text class="t-desc" x="80" y="1110">MCL_REALM and MCL_REALM_NAME are both required and must agree: the service refuses to start unless the sha256 of the name is the tag.</text>
 <text class="t-desc" x="80" y="1126">MCL_REALM_KEY is the trust anchor; MACULA_STATION_SEEDS with MACULA_STATION_NODE_IDS is the pinned dial; MCL_HEALTH_PORT is 8472.</text>
 <text class="t-desc" x="64" y="1180">No event store, by decision: a match is throwaway state in the engine process, and capabilities/0 is empty, so the bot answers no</text>
-<text class="t-desc" x="64" y="1198">procedure (Raf, 2026-09-23). find_match hands the engine and the paddle an emit closure and publishes every fact itself;</text>
-<text class="t-desc" x="64" y="1216">neither child publishes anything, and health is the match's: degraded when unpaired for 15 minutes or silent for more than 3 s.</text>
+<text class="t-desc" x="64" y="1198">procedure (Raf, 2026-09-23). find_match publishes the advert and seat facts itself, and hands each child an emit closure that</text>
+<text class="t-desc" x="64" y="1216">builds and publishes there, a frame each and a move each. Health is the match's: degraded when unpaired 15 minutes or the peer silent 3 s.</text>
 <rect class="b-sys" x="24" y="1240" width="22" height="14" rx="3"/>
 <text class="t-leg" x="54" y="1252">In scope</text>
 <rect class="b-per" x="110.8" y="1240" width="22" height="14" rx="3"/>

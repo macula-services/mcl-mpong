@@ -133,7 +133,7 @@ class Diagram:
 def context():
     d = Diagram("c4-context.svg", "mcl-mpong system context", 1000, 690)
     d.box("b-ext", 40, 30, 270, 120, "Spectator", "[External system]",
-          ["macula-portal's mpong_subscriber:", "draws the path a match took; it", "still reads the old topics"])
+          ["macula-portal's mpong_subscriber:", "draws the path a match took; it", "reads v2 advert and state facts"])
     d.box("b-per", 365, 30, 270, 120, "Operator", "[Person]",
           ["Runs the two bots, one per", "box, and supplies the realm", "and the pinned stations"],
           person=True)
@@ -178,8 +178,8 @@ def components():
           ["start_engine/1 puts one engine under it, and", "the engine is temporary: a match that crashes",
            "is over, not restarted."], code=True)
     d.box("b-sys", 536, 390, 456, 120, "find_match", "[gen_server, the coordinator]",
-          ["Owns the role and the current match: seeking,", "hosting, challenging, playing. Publishes every",
-           "fact itself, through mcl_om_pubsub:publish/2."], code=True)
+          ["Owns the role and the current match: seeking,", "hosting, challenging, playing. Publishes the",
+           "advert and seat facts; each child emits its own."], code=True)
     d.box("b-cmp", 56, 550, 456, 120, "mpong_game_engine", "[gen_server, 25 Hz]",
           ["The host's authoritative game: a frame every", "fifth tick, 5 Hz, emitted through the closure",
            "find_match gave it. Ball, ai, collision calls."], code=True)
@@ -202,13 +202,15 @@ def components():
     d.edge("M512 130H536"); d.text("t-rel", 524, 122, "boots", anchor="middle")
     d.edge("M536 160H520V210H284V230"); d.text("t-rel", 300, 206, "starts")
     d.edge("M200 350V390"); d.text("t-rel", 208, 374, "starts")
-    d.edge("M350 350V370H700V390"); d.text("t-rel", 420, 366, "starts second")
+    d.edge("M350 350V370H520V430H536"); d.text("t-rel", 420, 366, "starts second")
     d.edge("M536 490H520V530H284V510"); d.text("t-rel", 340, 526, "start_engine/1")
     d.edge("M200 510V550"); d.text("t-rel", 208, 546, "one engine, temporary")
     d.edge("M864 510V550"); d.text("t-rel", 856, 534, "starts on seat_reserved", anchor="end")
-    d.edge("M864 390V350"); d.text("t-rel", 872, 374, "builds every payload")
-    d.edge("M200 670V710"); d.text("t-rel", 208, 694, "frames seen, missed")
-    d.edge("M536 610H520V690H350V710"); d.text("t-rel", 400, 686, "moves and round trip")
+    d.edge("M600 390V350"); d.text("t-rel", 608, 380, "advert and seat facts")
+    d.edge("M512 620H530V360H760V350"); d.text("t-rel", 768, 380, "builds each frame")
+    d.edge("M992 610H1012V360H900V350"); d.text("t-rel", 908, 380, "builds each move")
+    d.edge("M200 670V710"); d.text("t-rel", 208, 694, "moves seen, missed")
+    d.edge("M536 610H520V690H350V710"); d.text("t-rel", 400, 686, "frames and round trip")
     d.edge("M992 770H1024V530H880V510"); d.text("t-rel", 890, 522, "facts as they arrive")
     d.edge("M512 930H536"); d.text("t-rel", 524, 922, "dials", anchor="middle")
     d.box("b-ext", 64, 1040, 920, 104, "Host environment", "[read at boot; nothing here is baked into the image]",
@@ -216,8 +218,8 @@ def components():
            "MCL_REALM_KEY is the trust anchor; MACULA_STATION_SEEDS with MACULA_STATION_NODE_IDS is the pinned dial; MCL_HEALTH_PORT is 8472."],
           code=True)
     d.text("t-desc", 64, 1180, "No event store, by decision: a match is throwaway state in the engine process, and capabilities/0 is empty, so the bot answers no")
-    d.text("t-desc", 64, 1198, "procedure (Raf, 2026-09-23). find_match hands the engine and the paddle an emit closure and publishes every fact itself;")
-    d.text("t-desc", 64, 1216, "neither child publishes anything, and health is the match's: degraded when unpaired for 15 minutes or silent for more than 3 s.")
+    d.text("t-desc", 64, 1198, "procedure (Raf, 2026-09-23). find_match publishes the advert and seat facts itself, and hands each child an emit closure that")
+    d.text("t-desc", 64, 1216, "builds and publishes there, a frame each and a move each. Health is the match's: degraded when unpaired 15 minutes or the peer silent 3 s.")
     d.legend(1240)
     d.write()
 

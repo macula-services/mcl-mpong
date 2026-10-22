@@ -50,7 +50,7 @@
 <text class="t-type" x="56" y="76">[External system]</text>
 <text class="t-desc" x="56" y="100">macula-portal's mpong_subscriber:</text>
 <text class="t-desc" x="56" y="116">draws the path a match took; it</text>
-<text class="t-desc" x="56" y="132">still reads the old topics</text>
+<text class="t-desc" x="56" y="132">reads v2 advert and state facts</text>
 <rect class="b-per" x="365" y="30" width="270" height="120" rx="10"/>
 <circle class="head" cx="391" cy="54" r="9"/>
 <text class="t-name" x="409" y="58">Operator</text>
