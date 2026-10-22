@@ -141,7 +141,7 @@ def context():
           ["A second mcl-mpong on another", "box: host or challenger, the", "other end of the match"])
     d.box("b-sys", 365, 186, 270, 152, "mcl-mpong", "[mcl_om mesh service]",
           ["Publishes and subscribes to the six", "match facts on io.macula/mcl-mpong/", "mpong/match/*_v2, and answers /health",
-           "on 8472. No procedures, no store:", "a match lives in one process"])
+           "on 8472. No own procedures, no store:", "a match lives in one process"])
     d.box("b-mac", 365, 430, 270, 120, "macula-realm", "[Macula infrastructure]",
           ["The trust anchor and the grant:", "the org mcl-mpong, scope for 30", "days, and the boot claim"])
     d.box("b-mac", 690, 430, 270, 120, "Macula stations, mesh DHT", "[Macula infrastructure]",
@@ -153,7 +153,7 @@ def context():
     d.edge("M460 338V430"); d.text("t-rel", 468, 384, "trust anchor, grant")
     d.edge("M620 338V370H825V430"); d.text("t-rel", 632, 364, "publishes and subscribes")
     d.text("t-desc", 40, 596, "No event store, by decision: a match is throwaway state in the engine process, and capabilities/0 is empty, so the")
-    d.text("t-desc", 40, 614, "bot answers no procedure. Its whole output is the facts it publishes, and a match needs two bots on different boxes:")
+    d.text("t-desc", 40, 614, "bot answers no procedure of its own. Its whole output is the facts it publishes, and a match needs two bots on different boxes:")
     d.text("t-desc", 40, 632, "one hosts the authoritative game and frames at 5 Hz, the other steers the far paddle and reports what it saw.")
     d.legend(650, boundary=False)
     d.write()

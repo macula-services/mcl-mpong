@@ -5,7 +5,7 @@ without reading it.*
 
 **Status: built and tested on wire 1.0.** mcl_om `~> 1.4` and macula `~> 16.0`; a `v*`
 tag builds and signs the image. macula-fleet carries a two-bot definition, one bot per
-box, so every match crosses stations. The bot answers no procedure and keeps no
+box, so every match crosses stations. The bot answers no procedure of its own and keeps no
 store.
 
 ## Level 1: system context
@@ -14,7 +14,7 @@ store.
 
 | Element | Kind | Role |
 | --- | --- | --- |
-| mcl-mpong | In scope | Publishes and subscribes to the six match facts on `io.macula/mcl-mpong/mpong/match/*_v2`, and answers `/health` on 8472. No procedures and no store: a match lives in one process |
+| mcl-mpong | In scope | Publishes and subscribes to the six match facts on `io.macula/mcl-mpong/mpong/match/*_v2`, and answers `/health` on 8472. No procedures of its own and no store: a match lives in one process |
 | Spectator | External system | macula-portal's `mpong_subscriber`, which draws the path a match took. It still reads the old topics and is to be repointed at these six |
 | Operator | Person | Runs the two bots, one per box, and supplies the realm and the pinned stations |
 | Other bot | External system | A second mcl-mpong on another box: host or challenger, the other end of the match |
