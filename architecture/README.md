@@ -3,10 +3,9 @@
 *This exists so a reader can see what mcl-mpong talks to, and what it is made of,
 without reading it.*
 
-**Status: built and tested, two bots pinned in the fleet.** The image builds in CI and
-is signed on a `v*` tag; macula-fleet runs two bots by digest
-(`edge/scripts/docker-compose.mcl-mpong.yml`), beam01 dialling nuremberg and beam02
-helsinki, so every match crosses stations. The bot answers no procedure and keeps no
+**Status: built and tested on wire 1.0.** mcl_om `~> 1.4` and macula `~> 16.0`; a `v*`
+tag builds and signs the image. macula-fleet carries a two-bot definition, one bot per
+box, so every match crosses stations. The bot answers no procedure and keeps no
 store.
 
 ## Level 1: system context
@@ -16,7 +15,7 @@ store.
 | Element | Kind | Role |
 | --- | --- | --- |
 | mcl-mpong | In scope | Publishes and subscribes to the six match facts on `io.macula/mcl-mpong/mpong/match/*_v2`, and answers `/health` on 8472. No procedures and no store: a match lives in one process |
-| Spectator | External system | macula-portal's `mpong_subscriber`, which reads the six topics and draws the path a match took |
+| Spectator | External system | macula-portal's `mpong_subscriber`, which draws the path a match took. It still reads the old topics and is to be repointed at these six |
 | Operator | Person | Runs the two bots, one per box, and supplies the realm and the pinned stations |
 | Other bot | External system | A second mcl-mpong on another box: host or challenger, the other end of the match |
 | macula-realm | Macula infrastructure | The trust anchor and the grant: the org `mcl-mpong`, scope for 30 days, and the boot claim its operator sees |
