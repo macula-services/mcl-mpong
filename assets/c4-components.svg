@@ -1,0 +1,168 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1040 1270" role="img" aria-label="mcl-mpong components">
+<title>mcl-mpong components</title>
+<style>
+.t-name { font-family: "Atkinson Hyperlegible", "Segoe UI", system-ui, -apple-system, Helvetica, Arial, sans-serif; font-size: 15px; font-weight: 700; }
+.t-desc { font-family: "Atkinson Hyperlegible", "Segoe UI", system-ui, -apple-system, Helvetica, Arial, sans-serif; font-size: 12.5px; }
+.t-rel { font-family: "Atkinson Hyperlegible", "Segoe UI", system-ui, -apple-system, Helvetica, Arial, sans-serif; font-size: 11.5px; paint-order: stroke; stroke-width: 4px; stroke-linejoin: round; }
+.t-code { font-family: "JetBrains Mono", ui-monospace, Menlo, Consolas, monospace; font-size: 13px; font-weight: 600; }
+.t-type { font-family: "JetBrains Mono", ui-monospace, Menlo, Consolas, monospace; font-size: 11.5px; }
+.t-bound { font-family: "JetBrains Mono", ui-monospace, Menlo, Consolas, monospace; font-size: 12px; font-weight: 600; }
+.t-leg { font-family: "Atkinson Hyperlegible", "Segoe UI", system-ui, -apple-system, Helvetica, Arial, sans-serif; font-size: 12px; }
+.edge { fill: none; stroke-width: 1.25; }
+.edge-later { fill: none; stroke-width: 1.25; stroke-dasharray: 5 4; }
+.bg { fill: #FFFFFF; }
+.b-sys { fill: #F5E9CC; stroke: #A56F0A; stroke-width: 2; }
+.b-per { fill: #E3EBF2; stroke: #3B5B7A; stroke-width: 1.25; }
+.b-mac { fill: #E6E4EE; stroke: #5E5A78; stroke-width: 1.25; }
+.b-ext { fill: #ECEFED; stroke: #8A9791; stroke-width: 1.25; }
+.b-cmp { fill: #FFFFFF; stroke: #8A9791; stroke-width: 1.25; }
+.b-later { fill: none; stroke: #8A9791; stroke-width: 1.25; stroke-dasharray: 5 4; }
+.bound { fill: none; stroke: #B3BDB8; stroke-width: 1; }
+.head { fill: #3B5B7A; }
+.t-name, .t-code { fill: #16201D; }
+.t-type, .t-bound, .t-leg { fill: #66736E; }
+.t-desc { fill: #34413C; }
+.t-rel { fill: #66736E; stroke: #FFFFFF; }
+.edge, .edge-later { stroke: #8A9791; }
+.arrowhead { fill: #8A9791; }
+@media (prefers-color-scheme: dark) {
+.bg { fill: #171F1C; }
+.b-sys { fill: #3A2E13; stroke: #E3AA3C; }
+.b-per { fill: #1D2A36; stroke: #8EB4D8; }
+.b-mac { fill: #26243A; stroke: #A9A4C8; }
+.b-ext { fill: #1C2421; stroke: #7D8B85; }
+.b-cmp { fill: #171F1C; stroke: #7D8B85; }
+.b-later { stroke: #7D8B85; }
+.bound { stroke: #4A5752; }
+.head { fill: #8EB4D8; }
+.t-name, .t-code { fill: #E6ECE9; }
+.t-type, .t-bound, .t-leg { fill: #93A09A; }
+.t-desc { fill: #C3CDC8; }
+.t-rel { fill: #93A09A; stroke: #171F1C; }
+.edge, .edge-later { stroke: #7D8B85; }
+.arrowhead { fill: #7D8B85; }
+}
+</style>
+<defs><marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="arrowhead" d="M0 0L10 5L0 10z"/></marker></defs>
+<rect class="bg" x="0" y="0" width="1040" height="1270"/>
+<rect class="bound" x="40" y="40" width="968" height="970" rx="12"/>
+<text class="t-bound" x="56" y="62">mcl-mpong [Container]</text>
+<rect class="b-cmp" x="56" y="70" width="456" height="120" rx="10"/>
+<text class="t-code" x="72" y="98">mcl_mpong_app</text>
+<text class="t-type" x="72" y="116">[OTP application]</text>
+<text class="t-desc" x="72" y="140">start/2 calls mcl_om:boot(mcl_mpong_service).</text>
+<text class="t-desc" x="72" y="156">No store_id/0 or data_dir/0 on the service, so</text>
+<text class="t-desc" x="72" y="172">mcl_om starts no reckon-db and no subscription.</text>
+<rect class="b-sys" x="536" y="70" width="456" height="120" rx="10"/>
+<text class="t-code" x="552" y="98">mcl_mpong_service</text>
+<text class="t-type" x="552" y="116">[:mcl_om_service behaviour]</text>
+<text class="t-desc" x="552" y="140">The six callbacks plus subscriptions/0, which</text>
+<text class="t-desc" x="552" y="156">gives mcl_om one subscriber per match fact.</text>
+<text class="t-desc" x="552" y="172">capabilities/0 is empty; scope mcl-mpong, 30 days.</text>
+<rect class="b-cmp" x="56" y="230" width="456" height="120" rx="10"/>
+<text class="t-code" x="72" y="258">mcl_mpong_sup</text>
+<text class="t-type" x="72" y="276">[supervisor, rest_for_one]</text>
+<text class="t-desc" x="72" y="300">Starts host_match_sup, then find_match. If the</text>
+<text class="t-desc" x="72" y="316">engine supervisor goes, the coordinator is</text>
+<text class="t-desc" x="72" y="332">restarted with it, since its monitor went too.</text>
+<rect class="b-cmp" x="536" y="230" width="456" height="120" rx="10"/>
+<text class="t-code" x="552" y="258">mcl_mpong_facts</text>
+<text class="t-type" x="552" y="276">[Erlang module]</text>
+<text class="t-desc" x="552" y="300">The six topics and their payloads, at version 2,</text>
+<text class="t-desc" x="552" y="316">and parse/2 for what a subscriber receives.</text>
+<text class="t-desc" x="552" y="332">A test pins every topic and every key.</text>
+<rect class="b-cmp" x="56" y="390" width="456" height="120" rx="10"/>
+<text class="t-code" x="72" y="418">host_match_sup</text>
+<text class="t-type" x="72" y="436">[supervisor, simple_one_for_one]</text>
+<text class="t-desc" x="72" y="460">start_engine/1 puts one engine under it, and</text>
+<text class="t-desc" x="72" y="476">the engine is temporary: a match that crashes</text>
+<text class="t-desc" x="72" y="492">is over, not restarted.</text>
+<rect class="b-sys" x="536" y="390" width="456" height="120" rx="10"/>
+<text class="t-code" x="552" y="418">find_match</text>
+<text class="t-type" x="552" y="436">[gen_server, the coordinator]</text>
+<text class="t-desc" x="552" y="460">Owns the role and the current match: seeking,</text>
+<text class="t-desc" x="552" y="476">hosting, challenging, playing. Publishes every</text>
+<text class="t-desc" x="552" y="492">fact itself, through mcl_om_pubsub:publish/2.</text>
+<rect class="b-cmp" x="56" y="550" width="456" height="120" rx="10"/>
+<text class="t-code" x="72" y="578">mpong_game_engine</text>
+<text class="t-type" x="72" y="596">[gen_server, 25 Hz]</text>
+<text class="t-desc" x="72" y="620">The host's authoritative game: a frame every</text>
+<text class="t-desc" x="72" y="636">fifth tick, 5 Hz, emitted through the closure</text>
+<text class="t-desc" x="72" y="652">find_match gave it. Ball, ai, collision calls.</text>
+<rect class="b-cmp" x="536" y="550" width="456" height="120" rx="10"/>
+<text class="t-code" x="552" y="578">play_remote_paddle</text>
+<text class="t-type" x="552" y="596">[gen_server, 25 Hz]</text>
+<text class="t-desc" x="552" y="620">The challenger's paddle: steers at the last</text>
+<text class="t-desc" x="552" y="636">ball it saw and emits a numbered move every</text>
+<text class="t-desc" x="552" y="652">second tick, with its own view of the mesh.</text>
+<rect class="b-cmp" x="56" y="710" width="456" height="120" rx="10"/>
+<text class="t-code" x="72" y="738">mesh_gauge</text>
+<text class="t-type" x="72" y="756">[Erlang module, pure]</text>
+<text class="t-desc" x="72" y="780">Sequence gaps, round trip (minus the time the</text>
+<text class="t-desc" x="72" y="796">host held the move, so no clock sync is</text>
+<text class="t-desc" x="72" y="812">assumed), and the stations a pool is on.</text>
+<rect class="b-cmp" x="536" y="710" width="456" height="120" rx="10"/>
+<text class="t-code" x="552" y="738">hear_match_facts</text>
+<text class="t-type" x="552" y="756">[macula_subscriber, one per topic]</text>
+<text class="t-desc" x="552" y="780">Declared by subscriptions/0. Parses nothing</text>
+<text class="t-desc" x="552" y="796">and decides nothing: the payload and the</text>
+<text class="t-desc" x="552" y="812">verified meta go straight to find_match.</text>
+<rect class="b-mac" x="56" y="870" width="456" height="120" rx="10"/>
+<text class="t-code" x="72" y="898">mcl_om</text>
+<text class="t-type" x="72" y="916">[library, ~&gt; 1.4]</text>
+<text class="t-desc" x="72" y="940">boot/1: loads the identity key, joins the</text>
+<text class="t-desc" x="72" y="956">realm, dials the pinned stations, starts one</text>
+<text class="t-desc" x="72" y="972">subscriber per topic, serves /health on 8472.</text>
+<rect class="b-mac" x="536" y="870" width="456" height="120" rx="10"/>
+<text class="t-code" x="552" y="898">macula SDK</text>
+<text class="t-type" x="552" y="916">[library, ~&gt; 16.0, wire 1.0]</text>
+<text class="t-desc" x="552" y="940">QUIC transport, pubsub over the stations, and</text>
+<text class="t-desc" x="552" y="956">the publisher every link verified, which is</text>
+<text class="t-desc" x="552" y="972">what a fact's attribution rests on.</text>
+<path class="edge" d="M56 130H16V930H56" marker-end="url(#a)"/>
+<text class="t-rel" x="30" y="530" text-anchor="middle" transform="rotate(-90 30 530)">calls mcl_om:boot/1</text>
+<path class="edge" d="M512 130H536" marker-end="url(#a)"/>
+<text class="t-rel" x="524" y="122" text-anchor="middle">boots</text>
+<path class="edge" d="M536 160H520V210H284V230" marker-end="url(#a)"/>
+<text class="t-rel" x="300" y="206">starts</text>
+<path class="edge" d="M200 350V390" marker-end="url(#a)"/>
+<text class="t-rel" x="208" y="374">starts</text>
+<path class="edge" d="M350 350V370H700V390" marker-end="url(#a)"/>
+<text class="t-rel" x="420" y="366">starts second</text>
+<path class="edge" d="M536 490H520V530H284V510" marker-end="url(#a)"/>
+<text class="t-rel" x="340" y="526">start_engine/1</text>
+<path class="edge" d="M200 510V550" marker-end="url(#a)"/>
+<text class="t-rel" x="208" y="546">one engine, temporary</text>
+<path class="edge" d="M864 510V550" marker-end="url(#a)"/>
+<text class="t-rel" x="856" y="534" text-anchor="end">starts on seat_reserved</text>
+<path class="edge" d="M864 390V350" marker-end="url(#a)"/>
+<text class="t-rel" x="872" y="374">builds every payload</text>
+<path class="edge" d="M200 670V710" marker-end="url(#a)"/>
+<text class="t-rel" x="208" y="694">frames seen, missed</text>
+<path class="edge" d="M536 610H520V690H350V710" marker-end="url(#a)"/>
+<text class="t-rel" x="400" y="686">moves and round trip</text>
+<path class="edge" d="M992 770H1024V530H880V510" marker-end="url(#a)"/>
+<text class="t-rel" x="890" y="522">facts as they arrive</text>
+<path class="edge" d="M512 930H536" marker-end="url(#a)"/>
+<text class="t-rel" x="524" y="922" text-anchor="middle">dials</text>
+<rect class="b-ext" x="64" y="1040" width="920" height="104" rx="10"/>
+<text class="t-code" x="80" y="1068">Host environment</text>
+<text class="t-type" x="80" y="1086">[read at boot; nothing here is baked into the image]</text>
+<text class="t-desc" x="80" y="1110">MCL_REALM and MCL_REALM_NAME are both required and must agree: the service refuses to start unless the sha256 of the name is the tag.</text>
+<text class="t-desc" x="80" y="1126">MCL_REALM_KEY is the trust anchor; MACULA_STATION_SEEDS with MACULA_STATION_NODE_IDS is the pinned dial; MCL_HEALTH_PORT is 8472.</text>
+<text class="t-desc" x="64" y="1180">No event store, by decision: a match is throwaway state in the engine process, and capabilities/0 is empty, so the bot answers no</text>
+<text class="t-desc" x="64" y="1198">procedure (Raf, 2026-09-23). find_match hands the engine and the paddle an emit closure and publishes every fact itself;</text>
+<text class="t-desc" x="64" y="1216">neither child publishes anything, and health is the match's: degraded when unpaired for 15 minutes or silent for more than 3 s.</text>
+<rect class="b-sys" x="24" y="1240" width="22" height="14" rx="3"/>
+<text class="t-leg" x="54" y="1252">In scope</text>
+<rect class="b-per" x="110.8" y="1240" width="22" height="14" rx="3"/>
+<text class="t-leg" x="140.8" y="1252">Person</text>
+<rect class="b-mac" x="184.39999999999998" y="1240" width="22" height="14" rx="3"/>
+<text class="t-leg" x="214.39999999999998" y="1252">Macula infrastructure</text>
+<rect class="b-ext" x="357.0" y="1240" width="22" height="14" rx="3"/>
+<text class="t-leg" x="387.0" y="1252">External system</text>
+<rect class="b-cmp" x="490.0" y="1240" width="22" height="14" rx="3"/>
+<text class="t-leg" x="520.0" y="1252">Container or component</text>
+<rect class="bound" x="669.2" y="1240" width="22" height="14" rx="3"/>
+<text class="t-leg" x="699.2" y="1252">Boundary</text>
+</svg>

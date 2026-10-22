@@ -1,0 +1,111 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 690" role="img" aria-label="mcl-mpong system context">
+<title>mcl-mpong system context</title>
+<style>
+.t-name { font-family: "Atkinson Hyperlegible", "Segoe UI", system-ui, -apple-system, Helvetica, Arial, sans-serif; font-size: 15px; font-weight: 700; }
+.t-desc { font-family: "Atkinson Hyperlegible", "Segoe UI", system-ui, -apple-system, Helvetica, Arial, sans-serif; font-size: 12.5px; }
+.t-rel { font-family: "Atkinson Hyperlegible", "Segoe UI", system-ui, -apple-system, Helvetica, Arial, sans-serif; font-size: 11.5px; paint-order: stroke; stroke-width: 4px; stroke-linejoin: round; }
+.t-code { font-family: "JetBrains Mono", ui-monospace, Menlo, Consolas, monospace; font-size: 13px; font-weight: 600; }
+.t-type { font-family: "JetBrains Mono", ui-monospace, Menlo, Consolas, monospace; font-size: 11.5px; }
+.t-bound { font-family: "JetBrains Mono", ui-monospace, Menlo, Consolas, monospace; font-size: 12px; font-weight: 600; }
+.t-leg { font-family: "Atkinson Hyperlegible", "Segoe UI", system-ui, -apple-system, Helvetica, Arial, sans-serif; font-size: 12px; }
+.edge { fill: none; stroke-width: 1.25; }
+.edge-later { fill: none; stroke-width: 1.25; stroke-dasharray: 5 4; }
+.bg { fill: #FFFFFF; }
+.b-sys { fill: #F5E9CC; stroke: #A56F0A; stroke-width: 2; }
+.b-per { fill: #E3EBF2; stroke: #3B5B7A; stroke-width: 1.25; }
+.b-mac { fill: #E6E4EE; stroke: #5E5A78; stroke-width: 1.25; }
+.b-ext { fill: #ECEFED; stroke: #8A9791; stroke-width: 1.25; }
+.b-cmp { fill: #FFFFFF; stroke: #8A9791; stroke-width: 1.25; }
+.b-later { fill: none; stroke: #8A9791; stroke-width: 1.25; stroke-dasharray: 5 4; }
+.bound { fill: none; stroke: #B3BDB8; stroke-width: 1; }
+.head { fill: #3B5B7A; }
+.t-name, .t-code { fill: #16201D; }
+.t-type, .t-bound, .t-leg { fill: #66736E; }
+.t-desc { fill: #34413C; }
+.t-rel { fill: #66736E; stroke: #FFFFFF; }
+.edge, .edge-later { stroke: #8A9791; }
+.arrowhead { fill: #8A9791; }
+@media (prefers-color-scheme: dark) {
+.bg { fill: #171F1C; }
+.b-sys { fill: #3A2E13; stroke: #E3AA3C; }
+.b-per { fill: #1D2A36; stroke: #8EB4D8; }
+.b-mac { fill: #26243A; stroke: #A9A4C8; }
+.b-ext { fill: #1C2421; stroke: #7D8B85; }
+.b-cmp { fill: #171F1C; stroke: #7D8B85; }
+.b-later { stroke: #7D8B85; }
+.bound { stroke: #4A5752; }
+.head { fill: #8EB4D8; }
+.t-name, .t-code { fill: #E6ECE9; }
+.t-type, .t-bound, .t-leg { fill: #93A09A; }
+.t-desc { fill: #C3CDC8; }
+.t-rel { fill: #93A09A; stroke: #171F1C; }
+.edge, .edge-later { stroke: #7D8B85; }
+.arrowhead { fill: #7D8B85; }
+}
+</style>
+<defs><marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="arrowhead" d="M0 0L10 5L0 10z"/></marker></defs>
+<rect class="bg" x="0" y="0" width="1000" height="690"/>
+<rect class="b-ext" x="40" y="30" width="270" height="120" rx="10"/>
+<text class="t-name" x="56" y="58">Spectator</text>
+<text class="t-type" x="56" y="76">[External system]</text>
+<text class="t-desc" x="56" y="100">macula-portal's mpong_subscriber:</text>
+<text class="t-desc" x="56" y="116">it reads the six topics and</text>
+<text class="t-desc" x="56" y="132">draws the path they took</text>
+<rect class="b-per" x="365" y="30" width="270" height="120" rx="10"/>
+<circle class="head" cx="391" cy="54" r="9"/>
+<text class="t-name" x="409" y="58">Operator</text>
+<text class="t-type" x="409" y="76">[Person]</text>
+<text class="t-desc" x="381" y="100">Runs the two bots, one per</text>
+<text class="t-desc" x="381" y="116">box, and supplies the realm</text>
+<text class="t-desc" x="381" y="132">and the pinned stations</text>
+<rect class="b-ext" x="690" y="30" width="270" height="120" rx="10"/>
+<text class="t-name" x="706" y="58">Other bot</text>
+<text class="t-type" x="706" y="76">[External system]</text>
+<text class="t-desc" x="706" y="100">A second mcl-mpong on another</text>
+<text class="t-desc" x="706" y="116">box: host or challenger, the</text>
+<text class="t-desc" x="706" y="132">other end of the match</text>
+<rect class="b-sys" x="365" y="186" width="270" height="152" rx="10"/>
+<text class="t-name" x="381" y="214">mcl-mpong</text>
+<text class="t-type" x="381" y="232">[mcl_om mesh service]</text>
+<text class="t-desc" x="381" y="256">Publishes and subscribes to the six</text>
+<text class="t-desc" x="381" y="272">match facts on io.macula/mcl-mpong/</text>
+<text class="t-desc" x="381" y="288">mpong/match/*_v2, and answers /health</text>
+<text class="t-desc" x="381" y="304">on 8472. No procedures, no store:</text>
+<text class="t-desc" x="381" y="320">a match lives in one process</text>
+<rect class="b-mac" x="365" y="430" width="270" height="120" rx="10"/>
+<text class="t-name" x="381" y="458">macula-realm</text>
+<text class="t-type" x="381" y="476">[Macula infrastructure]</text>
+<text class="t-desc" x="381" y="500">The trust anchor and the grant:</text>
+<text class="t-desc" x="381" y="516">the org mcl-mpong, scope for 30</text>
+<text class="t-desc" x="381" y="532">days, and the boot claim</text>
+<rect class="b-mac" x="690" y="430" width="270" height="120" rx="10"/>
+<text class="t-name" x="706" y="458">Macula stations, mesh DHT</text>
+<text class="t-type" x="706" y="476">[Macula infrastructure]</text>
+<text class="t-desc" x="706" y="500">The pinned dial; every fact goes</text>
+<text class="t-desc" x="706" y="516">through a station, and the DHT</text>
+<text class="t-desc" x="706" y="532">holds each advertisement</text>
+<path class="edge" d="M400 186V168H175V150" marker-end="url(#a)"/>
+<text class="t-rel" x="200" y="160">reads the six topics,</text>
+<text class="t-rel" x="200" y="176">draws the path</text>
+<path class="edge" d="M500 150V186" marker-end="url(#a)"/>
+<text class="t-rel" x="508" y="164">deploys the two bots</text>
+<path class="edge" d="M825 150V168H620V186" marker-end="url(#a)"/>
+<text class="t-rel" x="632" y="160">the six match facts, both ways</text>
+<path class="edge" d="M460 338V430" marker-end="url(#a)"/>
+<text class="t-rel" x="468" y="384">trust anchor, grant</text>
+<path class="edge" d="M620 338V370H825V430" marker-end="url(#a)"/>
+<text class="t-rel" x="632" y="364">publishes and subscribes</text>
+<text class="t-desc" x="40" y="596">No event store, by decision: a match is throwaway state in the engine process, and capabilities/0 is empty, so the</text>
+<text class="t-desc" x="40" y="614">bot answers no procedure. Its whole output is the facts it publishes, and a match needs two bots on different boxes:</text>
+<text class="t-desc" x="40" y="632">one hosts the authoritative game and frames at 5 Hz, the other steers the far paddle and reports what it saw.</text>
+<rect class="b-sys" x="24" y="650" width="22" height="14" rx="3"/>
+<text class="t-leg" x="54" y="662">In scope</text>
+<rect class="b-per" x="110.8" y="650" width="22" height="14" rx="3"/>
+<text class="t-leg" x="140.8" y="662">Person</text>
+<rect class="b-mac" x="184.39999999999998" y="650" width="22" height="14" rx="3"/>
+<text class="t-leg" x="214.39999999999998" y="662">Macula infrastructure</text>
+<rect class="b-ext" x="357.0" y="650" width="22" height="14" rx="3"/>
+<text class="t-leg" x="387.0" y="662">External system</text>
+<rect class="b-cmp" x="490.0" y="650" width="22" height="14" rx="3"/>
+<text class="t-leg" x="520.0" y="662">Container or component</text>
+</svg>
