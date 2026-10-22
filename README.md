@@ -30,7 +30,7 @@ and which stations each end is on.
 
 ## Status
 
-Built and tested. Its fleet definition (two bots, pinned by digest) is in `macula-fleet`; see Deployment. Builds on macula 16 through `mcl_om` 1.4 (wire 1.0), the wire the live fleet runs.
+Built and tested. Its fleet definition (two bots) is in `macula-fleet`; see Deployment. Builds on macula 16 through `mcl_om` 1.4 (wire 1.0), the wire the live fleet runs.
 The spectator, macula-portal's `mpong_subscriber`, reads `game_advertised_v2`
 and `state_broadcast_v2` from the contract below.
 
@@ -178,11 +178,10 @@ included. It does not play a match to its end.
 
 CI pushes `:main` and `:<sha>` on every push to `main` that touches code. A
 `v*` tag pushes the semver tag, and moves `:latest` only once attest has signed
-it. A push deploys nothing by itself: the fleet runs a release **pinned by
-digest** in `macula-io/macula-fleet`
-(`edge/scripts/docker-compose.mcl-mpong.yml`), two bots, each dialling a
-different station, so every match crosses stations. A new build reaches them
-only when that pin moves.
+it. A push deploys nothing by itself: the fleet's definition in
+`macula-io/macula-fleet` (`edge/scripts/docker-compose.mcl-mpong.yml`) runs two
+bots on `:latest`, each dialling a different station, so every match crosses
+stations. A new build reaches them when `:latest` moves to it.
 
 The package is public.
 

@@ -6,7 +6,8 @@ without reading it.*
 **Status: built and tested on wire 1.0.** mcl_om `~> 1.4` and macula `~> 16.0`; a `v*`
 tag builds and signs the image. macula-fleet carries a two-bot definition, one bot per
 box, so every match crosses stations. The bot answers no procedure of its own and keeps no
-store.
+store; `mcl_om` adds the open `mcl-mpong/info` and `mcl-mpong/get_limits` to every
+service.
 
 ## Level 1: system context
 
@@ -37,7 +38,7 @@ state in the engine process, so the bot owns no reckon-db and no read model.
 | `mcl_mpong_sup` | supervisor, `rest_for_one` | Starts `host_match_sup`, then `find_match`. If the engine supervisor goes, the coordinator is restarted with it, since its monitor on a hosted engine went too |
 | `mcl_mpong_facts` | Erlang module | The six topics and their payloads at version 2, and `parse/2` for what a subscriber receives. A test pins every topic and every key |
 | `host_match_sup` | supervisor, `simple_one_for_one` | `start_engine/1` puts one engine under it. The engine is `temporary`: a match that crashes is over, not restarted |
-| `find_match` | `gen_server`, the coordinator | Owns the role and the current match: seeking, hosting, challenging, playing. Publishes the game and seat facts itself, through `mcl_om_pubsub:publish/2` on a `mcl_mpong_facts` topic, and hands the engine and the paddle an emit closure that publishes the payload each child builds in its own process |
+| `find_match` | `gen_server`, the coordinator | Owns the role and the current match: seeking, hosting, challenging, playing. Publishes the game and seat facts itself, through `mcl_om_pubsub:publish/3` on a `mcl_mpong_facts` topic, and hands the engine and the paddle an emit closure that publishes the payload each child builds in its own process |
 | `mpong_game_engine` | `gen_server`, 25 Hz | The host's authoritative game: a frame every fifth tick, 5 Hz, emitted through the closure. Calls `mpong_ball`, `mpong_ai`, `mpong_collision` and `mpong_obstacles` |
 | `play_remote_paddle` | `gen_server`, 25 Hz | The challenger's paddle: steers at the last ball it saw and emits a numbered move every second tick, carrying its own view of the mesh |
 | `mesh_gauge` | Erlang module, pure | Sequence gaps, round trip (minus the time the host held the move, so no clock sync is assumed), and the stations a pool is on |
