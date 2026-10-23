@@ -180,11 +180,12 @@ included. It does not play a match to its end.
 
 CI pushes `:main` and `:<sha>` on every push to `main` that touches code. A
 `v*` tag pushes the semver tag, and moves `:latest` only once attest has signed
-it. A push deploys nothing by itself: the fleet's compose file in
-`macula-io/macula-fleet` (`edge/scripts/docker-compose.mcl-mpong.yml`) runs two
-bots, each dialling a different station, so every match crosses stations. A new
-build reaches them through the fleet's own release channel, not on a `main`
-push.
+it; `:latest` is what the two bots run, so a tag is the deploy and a push to
+`main` reaches no box. The fleet's compose file
+(`macula-io/macula-fleet`, `edge/scripts/docker-compose.mcl-mpong.yml`:31) runs two
+bots, each dialling a different station, so every match crosses stations. That
+file is hand-placed in a reviewed commit: macula-fleet pins the images it
+releases itself by digest, and mcl-mpong is not one of them.
 
 The package is public.
 
