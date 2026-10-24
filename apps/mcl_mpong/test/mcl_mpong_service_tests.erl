@@ -159,12 +159,13 @@ the_realm_name_is_configured_test() ->
     {ok, Compose} = file:read_file(alongside("deploy/docker-compose.yml")),
     ?assertNotEqual(nomatch, binary:match(Compose, <<"MCL_REALM_NAME=">>)).
 
-%% ⚠ THE ORG IS IN THE SHIPPED CONFIG OR THE BOT NEVER CLAIMS IT. mcl_om sends no
-%% claim, and advertises nothing of its own, when its `org' is unset (it reads
-%% `_'), so the realm has no row to admit and the node still answers /health
-%% "ok". That is how the first bot on a lab box ran on 2026-09-24. The org it
-%% claims must be the org its facts are published under, or it claims one org
-%% and speaks in another.
+%% ⚠ THE ORG IS IN THE SHIPPED CONFIG OR THE BOT NEVER CLAIMS IT. Until mcl_om
+%% 0.27.1 an unset `org' meant mcl_om read `_', sent the realm no claim and
+%% advertised nothing of its own, so the realm had no row to admit and the node
+%% still answered /health "ok"; that is how the first bot on a lab box ran on
+%% 2026-09-24. Since 0.27.1 boot refuses an unset org, naming the setting. The
+%% org it claims must be the org its facts are published under, or it claims one
+%% org and speaks in another.
 the_org_claimed_is_the_org_the_facts_are_published_under_test() ->
     {ok, Config} = file:read_file(alongside("config/sys.config.src")),
     {match, [Claimed]} = re:run(Config, "\\{org,\\s*<<\"([^\"]+)\">>\\}",

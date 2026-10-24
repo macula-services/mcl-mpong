@@ -5,7 +5,8 @@ without reading it.*
 
 **Status: built and tested on wire 1.0.** mcl_om `~> 1.4` and macula `~> 16.0`; a `v*`
 tag builds and signs the image. macula-fleet carries a two-bot definition, one bot per
-box, so every match crosses stations. The bot answers no procedure of its own and keeps no
+box, so every match crosses stations; both stacks that hold it are offline in the
+fleet's manifests, so no bot runs today. The bot answers no procedure of its own and keeps no
 store.
 
 ## Level 1: system context
