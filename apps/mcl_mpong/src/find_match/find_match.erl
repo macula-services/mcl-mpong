@@ -445,8 +445,12 @@ self_node_id() ->
 status_node_id({ok, Pool, _Realm}) -> node_id_of(macula:status(Pool));
 status_node_id({error, _} = NotYet) -> NotYet.
 
-node_id_of({ok, #{self_node_id := NodeId}}) -> {ok, NodeId};
-node_id_of(Other) -> {error, Other}.
+%% ONE CLAUSE, ON PURPOSE. macula:status/1 is typed {ok, map()} with
+%% `self_node_id' in it; a fallback for a shape the type says cannot happen
+%% would turn a changed macula into a silent {error, _} this bot reads as
+%% "no handle yet". The clause that is missing is the one that would crash,
+%% and a crash here is a supervisor restart Raf can see.
+node_id_of({ok, #{self_node_id := NodeId}}) -> {ok, NodeId}.
 
 %% The mesh being dark is not the match's problem to solve here; a refused
 %% publish is logged by mcl_om (async_log), because a bot whose facts are
@@ -462,8 +466,10 @@ connected_stations() ->
 links_of({ok, Pool, _Realm}) -> stations_of(macula:links(Pool));
 links_of({error, _}) -> [].
 
-stations_of({ok, Links}) -> mesh_gauge:connected_stations(Links);
-stations_of(_) -> [].
+%% Same rule as node_id_of/1: macula:links/1 is typed {ok, [map()]}, so the
+%% dark-mesh case is already answered by links_of/1's {error, _} clause above,
+%% and a fallback here would only hide a shape change.
+stations_of({ok, Links}) -> mesh_gauge:connected_stations(Links).
 
 %%====================================================================
 %% Helpers
