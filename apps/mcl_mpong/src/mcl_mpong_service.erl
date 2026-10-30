@@ -79,7 +79,7 @@ identity_spec() ->
 %% WHO MAY DELIVER: `members' -- any publisher the realm admitted, which is
 %% what every bot playing a match is. macula 18 has no default (macula#147) and
 %% mcl_om refuses a declaration that names none, so the decision is written
-%% here. Not `{org, _}', because nothing in this mesh presents an org key yet,
+%% here. Not `{org, _}`, because nothing in this mesh presents an org key yet,
 %% and not `{open, _}', the opt-out that would admit a publisher from outside
 %% the realm to a match.
 subscriptions() ->
