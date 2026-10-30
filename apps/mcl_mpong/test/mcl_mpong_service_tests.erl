@@ -140,7 +140,10 @@ wait_gone(Pid) ->
 %% topic the contract names in the configured realm.
 subscribes_to_every_match_fact_test() ->
     with_realm_name("io.macula", fun() ->
-        ?assertEqual([{mcl_mpong_facts:topic(<<"io.macula">>, F), hear_match_facts, F}
+        ?assertEqual([#{topic => mcl_mpong_facts:topic(<<"io.macula">>, F),
+                        module => hear_match_facts,
+                        args => F,
+                        sources => members}
                       || F <- mcl_mpong_facts:facts()],
                      ?SERVICE:subscriptions())
     end).

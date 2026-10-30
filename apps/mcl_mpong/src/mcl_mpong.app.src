@@ -1,6 +1,6 @@
 {application, mcl_mpong, [
     {description, "Two bots play pong over the mesh, and the match reports how the mesh carried it"},
-    {vsn, "0.1.0"},
+    {vsn, "0.2.0"},
     {registered, [mcl_mpong_sup]},
     {mod, {mcl_mpong_app, []}},
     {applications, [

@@ -28,7 +28,7 @@
 
 info() ->
     #{name => <<"mcl-mpong">>,
-      version => <<"0.1.0">>,
+      version => <<"0.2.0">>,
       description => <<"Two bots play pong over the mesh, and the match reports how the mesh carried it">>}.
 
 %% The realm name the topics carry is checked against the realm the pool
@@ -75,9 +75,19 @@ identity_spec() ->
       ttl_days => 30}.
 
 %% One subscriber per match fact, each handing its facts to `find_match'.
+%%
+%% WHO MAY DELIVER: `members' -- any publisher the realm admitted, which is
+%% what every bot playing a match is. macula 18 has no default (macula#147) and
+%% mcl_om refuses a declaration that names none, so the decision is written
+%% here. Not `{org, _}', because nothing in this mesh presents an org key yet,
+%% and not `{open, _}', the opt-out that would admit a publisher from outside
+%% the realm to a match.
 subscriptions() ->
     Realm = realm_name(),
-    [{mcl_mpong_facts:topic(Realm, F), hear_match_facts, F} || F <- mcl_mpong_facts:facts()].
+    [#{topic => mcl_mpong_facts:topic(Realm, F),
+       module => hear_match_facts,
+       args => F,
+       sources => members} || F <- mcl_mpong_facts:facts()].
 
 %% @doc The realm NAME the topics carry (io.macula), where mcl_om's realm is
 %% its sha256 tag.

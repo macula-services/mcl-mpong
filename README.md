@@ -32,7 +32,7 @@ Architecture: the C4 model (context and components) is in [architecture/README.m
 
 ## Status
 
-Built and tested. Its fleet definition (two bots, hand-placed in a reviewed commit) is in `macula-fleet` at `edge/scripts/docker-compose.mcl-mpong.yml`; see Deployment. Builds on macula 16 through `mcl_om` 1.4 (wire 1.0), the wire the live fleet runs.
+Built and tested. Its fleet definition (two bots, hand-placed in a reviewed commit) is in `macula-fleet` at `edge/scripts/docker-compose.mcl-mpong.yml`; see Deployment. Builds on macula 18 through `mcl_om` 1.6 (wire 1.0), the wire the live fleet runs.
 The spectator, macula-portal's `mpong_subscriber`, reads `game_advertised_v2`
 and `state_broadcast_v2` from the contract below.
 

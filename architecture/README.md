@@ -3,7 +3,7 @@
 *This exists so a reader can see what mcl-mpong talks to, and what it is made of,
 without reading it.*
 
-**Status: built and tested on wire 1.0.** mcl_om `~> 1.4` and macula `~> 16.0`; a `v*`
+**Status: built and tested on wire 1.0.** mcl_om `~> 1.6` and macula `~> 18.0`; a `v*`
 tag builds and signs the image. macula-fleet carries a two-bot definition, one bot per
 box, so every match crosses stations; both stacks that hold it are offline in the
 fleet's manifests, so no bot runs today. The bot answers no procedure of its own and keeps no
@@ -43,8 +43,8 @@ state in the engine process, so the bot owns no reckon-db and no read model.
 | `play_remote_paddle` | `gen_server`, 25 Hz | The challenger's paddle: steers at the last ball it saw and emits a numbered move every second tick, carrying its own view of the mesh |
 | `mesh_gauge` | Erlang module, pure | Sequence gaps, round trip (minus the time the host held the move, so no clock sync is assumed), and the stations a pool is on |
 | `hear_match_facts` | `macula_subscriber`, one per topic | Declared by `subscriptions/0`. Parses nothing and decides nothing: the payload and the meta macula verified go straight to `find_match` |
-| `mcl_om` | library, `~> 1.4` | `boot/1`: loads the identity key, joins the realm, dials the pinned stations, starts one subscriber per topic, serves `/health` on 8472 |
-| macula SDK | library, `~> 16.0`, wire 1.0 | QUIC transport, pubsub over the stations, and the verified publisher every fact's attribution rests on |
+| `mcl_om` | library, `~> 1.6` | `boot/1`: loads the identity key, joins the realm, dials the pinned stations, starts one subscriber per topic, serves `/health` on 8472 |
+| macula SDK | library, `~> 18.0`, wire 1.0 | QUIC transport, pubsub over the stations, and the verified publisher every fact's attribution rests on |
 | Host environment | read at boot | `MCL_REALM` and `MCL_REALM_NAME` (required, and they must agree), `MCL_REALM_KEY`, `MACULA_STATION_SEEDS`, `MACULA_STATION_NODE_IDS`, `MCL_HEALTH_PORT`, `MCL_NODE_NAME`, `MCL_NODE_HOST`, `MCL_COOKIE` |
 
 `/health` is the match's health, not the mesh's: `down` when the coordinator is not

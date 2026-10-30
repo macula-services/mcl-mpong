@@ -5,9 +5,28 @@ All notable changes to this project are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## Unreleased
+## [0.2.0] - 2026-10-30
 
-- **macula is declared, at 16** (macula-codebase-checks#4, #14). The
+- **On mcl_om 1.6 and macula 18, and every match subscription now says who may
+  deliver to it.** `mcl_om` moves to `~> 1.6` and `macula` to `~> 18.0`; 18
+  still speaks wire 1.0, so this bot still plays against every wire 1.0 box.
+  What it brings is two refusals at boot, not two defaults
+  (macula-io/macula#147), and this release satisfies both:
+
+  | Rule | Before | Now |
+  | --- | --- | --- |
+  | who may CALL a capability with a handler | unspecified | none advertised: this bot publishes facts and serves no call |
+  | who may DELIVER to a subscription | unspecified = accepted | required; one per match fact, all `sources => members` |
+
+  `members` is any publisher the realm admitted, which is what every bot in a
+  match is. Not `{org, _}`, because nothing in this mesh presents an org key
+  yet, and not `{open, _}`, the opt-out that would let a publisher from outside
+  the realm into a match. A subscription that names no source is refused,
+  naming the topic, before the service starts.
+
+- **macula is declared** (macula-codebase-checks#4, #14), landed in main before
+  this release and shipped by it; the versions below are the ones it landed
+  with, and the entry above supersedes them. The
   service called macula modules and compiled against `macula_response`
   without declaring the application: it arrived transitively through
   `mcl_om`, so a rebuild took whatever major the newest mcl_om carried.
@@ -16,8 +35,6 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   so this service still speaks to every wire 1.0 box; what it adds is the
   revocation bound (macula#118). This service gates no overlay and issues
   no endorsement.
-
-## [Unreleased]
 
 ## [0.1.0] - 2026-10-05
 
