@@ -7,6 +7,9 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [0.2.0] - 2026-10-30
 
+Refs macula-services/mcl-om#42, the migration of the mcl-* services onto
+mcl_om 1.6 and macula 18.
+
 - **On mcl_om 1.6 and macula 18, and every match subscription now says who may
   deliver to it.** `mcl_om` moves to `~> 1.6` and `macula` to `~> 18.0`; 18
   still speaks wire 1.0, so this bot still plays against every wire 1.0 box.
